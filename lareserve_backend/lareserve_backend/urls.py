@@ -19,14 +19,15 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
+from lareserve.views import GoogleLogin
 from . import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Auth and authorization
-    path('api/v1/auth/', include('dj_rest_auth.urls')),
-    path('api/v1/auth/registration/', include('dj_rest_auth.registration.urls')),
+    path('accounts/', include('allauth.urls')),  # SSO test pages, http://127.0.0.1:8000/accounts/google/login/
+    path('api/v1/auth/google/', GoogleLogin.as_view(), name='google_login'),
 
     path('api/v1/', include('lareserve.urls')),
 

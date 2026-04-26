@@ -41,8 +41,8 @@ LOGS_DIR = BASE_DIR / 'logs'
 LOGS_DIR.mkdir(exist_ok=True)
 
 from .logging_config import setup_loguru
-setup_loguru()
 
+setup_loguru()
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -77,7 +77,8 @@ INSTALLED_APPS = [
     # Auth & Registration
     'allauth',
     'allauth.account',
-    'allauth.socialaccount', # Needed for registration even without SSO
+    'allauth.socialaccount',  # Needed for registration even without SSO
+    'allauth.socialaccount.providers.google',
     'dj_rest_auth',
     'dj_rest_auth.registration',
 
@@ -85,11 +86,29 @@ INSTALLED_APPS = [
     'lareserve',
 ]
 
-SITE_ID = 1
+SITE_ID = 2
 
 AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
+
+# Where to redirect user after sign in/out
+# TODO: update these
+LOGIN_REDIRECT_URL = '/api/v1/docs'
+LOGOUT_REDIRECT_URL = '/api/v1/docs'
 
 # Whole API by default is accessible only for authorized users
 REST_FRAMEWORK = {
@@ -102,6 +121,12 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+# Turn off password requirement
+ACCOUNT_LOGIN_METHODS = {'email'}
+
+# '*' means that field is required
+ACCOUNT_SIGNUP_FIELDS = ['email*']
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'lareserve_backend',
@@ -124,7 +149,6 @@ MIDDLEWARE = [
 
 # Trust the headers set by Nginx, required for work with SSL
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
 
 CORS_ALLOW_CREDENTIALS = True
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
@@ -182,7 +206,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# AUTH_USER_MODEL = 'lareserve.User' # TODO: handle user model
+AUTH_USER_MODEL = 'lareserve.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
