@@ -14,13 +14,20 @@ import { createInitialFloorPlanState } from './types';
 import { clampViewportScale, VIEWPORT_SCALE_FACTOR } from './viewport';
 
 import type {
+  AddDoorPayload,
   AddRectTablePayload,
   AddRoundTablePayload,
+  AddSeparatorPayload,
   AddWallPayload,
+  AddWindowPayload,
   MoveElementPayload,
+  MoveWallEndpointPayload,
+  ResizeDoorPayload,
   ResizeRectTablePayload,
   ResizeRoundTablePayload,
+  ResizeSeparatorPayload,
   ResizeWallPayload,
+  ResizeWindowPayload,
   SetViewportScalePayload,
   UpdateLabelPayload,
 } from './payloadTypes';
@@ -58,6 +65,18 @@ const floorPlanSlice = createSlice({
       addElement(state, 'wall', action.payload ?? {});
     },
 
+    addWindow: (state, action: PayloadAction<AddWindowPayload | undefined>) => {
+      addElement(state, 'window', action.payload ?? {});
+    },
+
+    addDoor: (state, action: PayloadAction<AddDoorPayload | undefined>) => {
+      addElement(state, 'door', action.payload ?? {});
+    },
+
+    addSeparator: (state, action: PayloadAction<AddSeparatorPayload | undefined>) => {
+      addElement(state, 'separator', action.payload ?? {});
+    },
+
     duplicateElement: (state, action: PayloadAction<string>) => {
       const source = state.elements.find((element) => element.id === action.payload);
       if (!source) return;
@@ -65,13 +84,27 @@ const floorPlanSlice = createSlice({
       pushHistory(state);
       const id = generateId(source.type);
       const index = nextIndexByType(state, source.type);
-      const copy: FloorElement = {
-        ...source,
-        id,
-        label: `${LABEL_PREFIX[source.type]}${index}`,
-        x: source.x + 30,
-        y: source.y + 30,
-      };
+
+      let copy: FloorElement;
+      if (source.type === 'wall' || source.type === 'separator' || source.type === 'window') {
+        copy = {
+          ...source,
+          id,
+          label: `${LABEL_PREFIX[source.type]}${index}`,
+          x: source.x + 30,
+          y: source.y + 30,
+          x2: source.x2 + 30,
+          y2: source.y2 + 30,
+        };
+      } else {
+        copy = {
+          ...source,
+          id,
+          label: `${LABEL_PREFIX[source.type]}${index}`,
+          x: source.x + 30,
+          y: source.y + 30,
+        };
+      }
 
       state.elements.push(copy);
       state.selectedElementId = id;
@@ -84,8 +117,38 @@ const floorPlanSlice = createSlice({
       if (element.x === action.payload.x && element.y === action.payload.y) return;
 
       pushHistory(state);
-      element.x = action.payload.x;
-      element.y = action.payload.y;
+
+      if (element.type === 'wall' || element.type === 'separator' || element.type === 'window') {
+        const dx = action.payload.x - element.x;
+        const dy = action.payload.y - element.y;
+        element.x = action.payload.x;
+        element.y = action.payload.y;
+        element.x2 += dx;
+        element.y2 += dy;
+      } else {
+        element.x = action.payload.x;
+        element.y = action.payload.y;
+      }
+
+      touchUpdatedAt(state);
+    },
+
+    moveWallEndpoint: (state, action: PayloadAction<MoveWallEndpointPayload>) => {
+      const element = state.elements.find((e) => e.id === action.payload.id);
+      if (!element || (element.type !== 'wall' && element.type !== 'separator' && element.type !== 'window')) return;
+
+      const { endpoint, x, y } = action.payload;
+      if (endpoint === 'start' && element.x === x && element.y === y) return;
+      if (endpoint === 'end' && element.x2 === x && element.y2 === y) return;
+
+      pushHistory(state);
+      if (endpoint === 'start') {
+        element.x = x;
+        element.y = y;
+      } else {
+        element.x2 = x;
+        element.y2 = y;
+      }
       touchUpdatedAt(state);
     },
 
@@ -109,6 +172,18 @@ const floorPlanSlice = createSlice({
 
     resizeWall: (state, action: PayloadAction<ResizeWallPayload>) => {
       resizeElement(state, 'wall', action.payload);
+    },
+
+    resizeWindow: (state, action: PayloadAction<ResizeWindowPayload>) => {
+      resizeElement(state, 'window', action.payload);
+    },
+
+    resizeDoor: (state, action: PayloadAction<ResizeDoorPayload>) => {
+      resizeElement(state, 'door', action.payload);
+    },
+
+    resizeSeparator: (state, action: PayloadAction<ResizeSeparatorPayload>) => {
+      resizeElement(state, 'separator', action.payload);
     },
 
     removeElement: (state, action: PayloadAction<string>) => {
@@ -143,6 +218,10 @@ const floorPlanSlice = createSlice({
       state.viewportScale = clampViewportScale(action.payload.scale);
     },
 
+    setPan: (state, action: PayloadAction<{ x: number; y: number }>) => {
+      state.viewportPan = action.payload;
+    },
+
     zoomIn: (state) => {
       state.viewportScale = clampViewportScale(state.viewportScale * VIEWPORT_SCALE_FACTOR);
     },
@@ -165,16 +244,24 @@ export const {
   addRoundTable,
   addRectTable,
   addWall,
+  addWindow,
+  addDoor,
+  addSeparator,
   duplicateElement,
   moveElement,
+  moveWallEndpoint,
   updateElementLabel,
   removeElement,
   resizeRoundTable,
   resizeRectTable,
   resizeWall,
+  resizeWindow,
+  resizeDoor,
+  resizeSeparator,
   undoFloorPlan,
   redoFloorPlan,
   setViewportScale,
+  setPan,
   zoomIn,
   zoomOut,
   saveFloorPlanRequested,

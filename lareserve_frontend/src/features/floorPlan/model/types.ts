@@ -1,4 +1,4 @@
-export type FloorElementType = 'roundTable' | 'rectTable' | 'wall';
+export type FloorElementType = 'roundTable' | 'rectTable' | 'wall' | 'window' | 'door' | 'separator';
 
 type BaseElement = {
   id: string;
@@ -21,11 +21,38 @@ export type RectTableElement = BaseElement & {
 
 export type WallElement = BaseElement & {
   type: 'wall';
+  x2: number;
+  y2: number;
+  height: number;
+};
+
+export type WindowElement = BaseElement & {
+  type: 'window';
+  x2: number;
+  y2: number;
+  height: number;
+};
+
+export type DoorElement = BaseElement & {
+  type: 'door';
   width: number;
   height: number;
 };
 
-export type FloorElement = RoundTableElement | RectTableElement | WallElement;
+export type SeparatorElement = BaseElement & {
+  type: 'separator';
+  x2: number;
+  y2: number;
+  height: number;
+};
+
+export type FloorElement =
+  | RoundTableElement
+  | RectTableElement
+  | WallElement
+  | WindowElement
+  | DoorElement
+  | SeparatorElement;
 
 export type FloorPlanMeta = {
   id: string;
@@ -33,11 +60,17 @@ export type FloorPlanMeta = {
   updatedAt: string;
 };
 
+export type ViewportPan = {
+  x: number;
+  y: number;
+};
+
 export type FloorPlanPersistedState = {
   meta: FloorPlanMeta;
   elements: FloorElement[];
   selectedElementId: string | null;
   viewportScale: number;
+  viewportPan: ViewportPan;
 };
 
 export type FloorPlanHistoryEntry = {
@@ -66,6 +99,7 @@ export const createInitialFloorPlanState = (): FloorPlanState => ({
   selectedElementId: null,
   elements: [],
   viewportScale: DEFAULT_VIEWPORT_SCALE,
+  viewportPan: { x: 0, y: 0 },
   history: {
     past: [],
     future: [],

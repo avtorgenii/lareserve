@@ -1,5 +1,7 @@
 import { Circle, Group, Rect, Text } from 'react-konva';
 
+import { setCursor } from '../../lib/setCursor';
+
 import type { RectTableElement, RoundTableElement } from '../../model/types';
 
 import { useCssVarColors } from '@/shared/lib/useCssVarColors';
@@ -8,6 +10,7 @@ type TableShapeProps = {
   element: RoundTableElement | RectTableElement;
   selected: boolean;
   onSelect: () => void;
+  onDragEnd: (x: number, y: number) => void;
 };
 
 type TableThemeColors = {
@@ -148,11 +151,27 @@ function renderRectTable(element: RectTableElement, selected: boolean, colors: T
   );
 }
 
-export default function TableShape({ element, selected, onSelect }: TableShapeProps) {
+export default function TableShape({ element, selected, onSelect, onDragEnd }: TableShapeProps) {
   const colors = useCssVarColors(TABLE_COLOR_VARS, FALLBACK_COLORS);
 
   return (
-    <Group x={element.x} y={element.y} onMouseDown={onSelect} onTouchStart={onSelect}>
+    <Group
+      draggable
+      x={element.x}
+      y={element.y}
+      onMouseDown={onSelect}
+      onTouchStart={onSelect}
+      onMouseEnter={(e) => setCursor(e, 'grab')}
+      onMouseLeave={(e) => setCursor(e, 'default')}
+      onDragStart={(e) => {
+        onSelect();
+        setCursor(e, 'grabbing');
+      }}
+      onDragEnd={(e) => {
+        onDragEnd(e.target.x(), e.target.y());
+        setCursor(e, 'grab');
+      }}
+    >
       {element.type === 'roundTable' ? renderRoundTable(element, selected, colors) : null}
       {element.type === 'rectTable' ? renderRectTable(element, selected, colors) : null}
 

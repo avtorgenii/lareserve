@@ -12,9 +12,10 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function isFloorPlanState(value: unknown): value is Omit<
   FloorPlanPersistedState,
-  'viewportScale'
+  'viewportScale' | 'viewportPan'
 > & {
   viewportScale?: number;
+  viewportPan?: { x: number; y: number };
 } {
   if (!isObject(value)) return false;
 
@@ -32,6 +33,13 @@ function isFloorPlanState(value: unknown): value is Omit<
     return false;
   }
 
+  if (typeof value.viewportPan !== 'undefined') {
+    const pan = value.viewportPan;
+    if (!isObject(pan) || typeof pan.x !== 'number' || typeof pan.y !== 'number') {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -41,17 +49,40 @@ function toPersistedState(state: FloorPlanState): FloorPlanPersistedState {
     elements: state.elements,
     selectedElementId: state.selectedElementId,
     viewportScale: state.viewportScale,
+    viewportPan: state.viewportPan,
   };
 }
 
+function migrateElement(el: Record<string, unknown>): Record<string, unknown> {
+  if (
+    (el.type === 'wall' || el.type === 'separator') &&
+    el.x2 == null &&
+    typeof el.width === 'number'
+  ) {
+    const x = typeof el.x === 'number' ? el.x : 0;
+    const y = typeof el.y === 'number' ? el.y : 0;
+    const { width, ...rest } = el;
+    return { ...rest, x2: x + width, y2: y };
+  }
+  return el;
+}
+
+function migrateElements(elements: unknown[]): unknown[] {
+  return elements.map((el) => (isObject(el) ? migrateElement(el) : el));
+}
+
 function normalizePersistedState(
-  value: Omit<FloorPlanPersistedState, 'viewportScale'> & { viewportScale?: number }
+  value: Omit<FloorPlanPersistedState, 'viewportScale' | 'viewportPan'> & {
+    viewportScale?: number;
+    viewportPan?: { x: number; y: number };
+  }
 ): FloorPlanPersistedState {
   return {
     meta: value.meta,
-    elements: value.elements,
+    elements: migrateElements(value.elements) as FloorPlanPersistedState['elements'],
     selectedElementId: value.selectedElementId,
     viewportScale: value.viewportScale ?? DEFAULT_VIEWPORT_SCALE,
+    viewportPan: value.viewportPan ?? { x: 0, y: 0 },
   };
 }
 
