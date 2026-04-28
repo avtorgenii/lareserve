@@ -2,14 +2,20 @@ import { cloneElements, cloneMeta, pushHistory } from './history';
 import { clampViewportScale } from './viewport';
 
 import type {
+  AddDoorPayload,
   AddPayloadByType,
   AddRectTablePayload,
   AddRoundTablePayload,
+  AddSeparatorPayload,
   AddWallPayload,
+  AddWindowPayload,
+  ResizeDoorPayload,
   ResizePayloadByType,
   ResizeRectTablePayload,
   ResizeRoundTablePayload,
+  ResizeSeparatorPayload,
   ResizeWallPayload,
+  ResizeWindowPayload,
 } from './payloadTypes';
 import type {
   FloorElement,
@@ -22,12 +28,18 @@ export const LABEL_PREFIX: Record<FloorElementType, string> = {
   roundTable: 'R',
   rectTable: 'T',
   wall: 'W',
+  window: 'WN',
+  door: 'D',
+  separator: 'SP',
 };
 
 const ELEMENT_DEFAULTS = {
   roundTable: { x: 0, y: 0, radius: 20 },
   rectTable: { x: 0, y: 0, width: 140, height: 80 },
-  wall: { x: 0, y: 0, width: 220, height: 22 },
+  wall: { x: 0, y: 0, x2: 220, y2: 0, height: 22 },
+  window: { x: 0, y: 0, x2: 140, y2: 0, height: 12 },
+  door: { x: 0, y: 0, width: 100, height: 12 },
+  separator: { x: 0, y: 0, x2: 120, y2: 0, height: 8 },
 } satisfies {
   [K in FloorElementType]: Omit<Extract<FloorElement, { type: K }>, 'id' | 'type' | 'label'>;
 };
@@ -52,6 +64,27 @@ const ELEMENT_BUILDERS = {
     type: 'wall' as const,
     label,
     ...ELEMENT_DEFAULTS.wall,
+    ...payload,
+  }),
+  window: (id: string, label: string, payload: AddWindowPayload) => ({
+    id,
+    type: 'window' as const,
+    label,
+    ...ELEMENT_DEFAULTS.window,
+    ...payload,
+  }),
+  door: (id: string, label: string, payload: AddDoorPayload) => ({
+    id,
+    type: 'door' as const,
+    label,
+    ...ELEMENT_DEFAULTS.door,
+    ...payload,
+  }),
+  separator: (id: string, label: string, payload: AddSeparatorPayload) => ({
+    id,
+    type: 'separator' as const,
+    label,
+    ...ELEMENT_DEFAULTS.separator,
     ...payload,
   }),
 } satisfies {
@@ -92,9 +125,30 @@ const ELEMENT_RESIZERS: ElementResizers = {
   },
 
   wall: (element: Extract<FloorElement, { type: 'wall' }>, payload: ResizeWallPayload) => {
+    if (typeof payload.height === 'number') {
+      element.height = payload.height;
+    }
+  },
+
+  window: (element: Extract<FloorElement, { type: 'window' }>, payload: ResizeWindowPayload) => {
+    if (typeof payload.height === 'number') {
+      element.height = payload.height;
+    }
+  },
+
+  door: (element: Extract<FloorElement, { type: 'door' }>, payload: ResizeDoorPayload) => {
     if (typeof payload.width === 'number') {
       element.width = payload.width;
     }
+    if (typeof payload.height === 'number') {
+      element.height = payload.height;
+    }
+  },
+
+  separator: (
+    element: Extract<FloorElement, { type: 'separator' }>,
+    payload: ResizeSeparatorPayload
+  ) => {
     if (typeof payload.height === 'number') {
       element.height = payload.height;
     }
@@ -158,6 +212,7 @@ export function toRuntimeState(payload: FloorPlanPersistedState): FloorPlanState
     elements: cloneElements(payload.elements),
     selectedElementId: payload.selectedElementId,
     viewportScale: clampViewportScale(payload.viewportScale),
+    viewportPan: payload.viewportPan ?? { x: 0, y: 0 },
     history: {
       past: [],
       future: [],

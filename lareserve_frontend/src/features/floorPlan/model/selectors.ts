@@ -33,6 +33,19 @@ export const selectViewportScale = createSelector(
   (floorPlan) => floorPlan.viewportScale
 );
 
+export const selectViewportPan = createSelector(
+  [selectFloorPlanState],
+  (floorPlan) => floorPlan.viewportPan
+);
+
+export const selectViewportCenter = createSelector(
+  [selectViewportPan, selectViewportScale],
+  (pan, scale) => ({
+    x: -pan.x / scale,
+    y: -pan.y / scale,
+  })
+);
+
 export const selectCanUndo = createSelector(
   [selectFloorPlanState],
   (floorPlan) => floorPlan.history.past.length > 0
@@ -51,6 +64,9 @@ export const selectElementsByType = (type: FloorElementType) =>
 export const selectRoundTables = selectElementsByType('roundTable');
 export const selectRectTables = selectElementsByType('rectTable');
 export const selectWalls = selectElementsByType('wall');
+export const selectWindows = selectElementsByType('window');
+export const selectDoors = selectElementsByType('door');
+export const selectSeparators = selectElementsByType('separator');
 
 export const selectElementCount = createSelector(
   [selectFloorPlanElements],
@@ -63,7 +79,7 @@ export const selectElementCountByType = createSelector([selectFloorPlanElements]
       acc[element.type] += 1;
       return acc;
     },
-    { roundTable: 0, rectTable: 0, wall: 0 }
+    { roundTable: 0, rectTable: 0, wall: 0, window: 0, door: 0, separator: 0 }
   );
 });
 

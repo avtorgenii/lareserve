@@ -5,6 +5,11 @@ type Size = {
   height: number;
 };
 
+type Pan = {
+  x: number;
+  y: number;
+};
+
 type ViewTransform = {
   x: number;
   y: number;
@@ -14,16 +19,19 @@ type ViewTransform = {
 /**
  * Returns the Konva Stage transform so that canvas origin (0, 0) sits at the
  * centre of the container and the scale equals the user-controlled viewportScale
- * directly (1.0 = 100%).  No auto-fit is applied — the view is stable when
- * elements are added or removed.
+ * directly (1.0 = 100%).  Pan offsets the origin from the centre.
  */
-export default function useViewTransform(size: Size, viewportScale: number): ViewTransform {
+export default function useViewTransform(
+  size: Size,
+  viewportScale: number,
+  pan: Pan
+): ViewTransform {
   return useMemo(
     () => ({
-      x: size.width / 2,
-      y: size.height / 2,
+      x: size.width / 2 + pan.x,
+      y: size.height / 2 + pan.y,
       scale: viewportScale,
     }),
-    [size.width, size.height, viewportScale]
+    [size.width, size.height, viewportScale, pan.x, pan.y]
   );
 }

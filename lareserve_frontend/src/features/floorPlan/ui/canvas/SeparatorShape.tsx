@@ -4,34 +4,39 @@ import { snapToGrid } from '../../lib/snapToGrid';
 import { setCursor } from '../../lib/setCursor';
 import EndpointHandles from './EndpointHandles';
 
-import type { WallElement } from '../../model/types';
+import type { SeparatorElement } from '../../model/types';
 
 import { useCssVarColors } from '@/shared/lib/useCssVarColors';
 
-type WallThemeColors = {
+type SeparatorThemeColors = {
   stroke: string;
   selectedStroke: string;
 };
 
-const WALL_FALLBACK_COLORS: WallThemeColors = {
-  stroke: '#878583',
+const SEPARATOR_FALLBACK_COLORS: SeparatorThemeColors = {
+  stroke: '#b0adab',
   selectedStroke: '#10b981',
 };
 
-const WALL_COLOR_VARS: Record<keyof WallThemeColors, string> = {
-  stroke: '--color-text-muted',
+const SEPARATOR_COLOR_VARS: Record<keyof SeparatorThemeColors, string> = {
+  stroke: '--color-border',
   selectedStroke: '--color-primary',
 };
 
-type WallShapeProps = {
-  element: WallElement;
+type SeparatorShapeProps = {
+  element: SeparatorElement;
   selected: boolean;
   onSelect: () => void;
   onDragEnd: (x: number, y: number) => void;
 };
 
-export default function WallShape({ element, selected, onSelect, onDragEnd }: WallShapeProps) {
-  const colors = useCssVarColors(WALL_COLOR_VARS, WALL_FALLBACK_COLORS);
+export default function SeparatorShape({
+  element,
+  selected,
+  onSelect,
+  onDragEnd,
+}: SeparatorShapeProps) {
+  const colors = useCssVarColors(SEPARATOR_COLOR_VARS, SEPARATOR_FALLBACK_COLORS);
 
   const dx = Number.isFinite(element.x2) ? element.x2 - element.x : 0;
   const dy = Number.isFinite(element.y2) ? element.y2 - element.y : 0;
@@ -62,15 +67,15 @@ export default function WallShape({ element, selected, onSelect, onDragEnd }: Wa
         points={[0, 0, dx, dy]}
         stroke={colors.stroke}
         strokeWidth={element.height}
-        lineCap="round"
+        lineCap="butt"
       />
 
       {selected ? (
         <Line
           points={[0, 0, dx, dy]}
           stroke={colors.selectedStroke}
-          strokeWidth={Math.max(2, element.height * 0.2)}
-          lineCap="round"
+          strokeWidth={Math.max(1.5, element.height * 0.3)}
+          lineCap="butt"
           listening={false}
         />
       ) : null}
@@ -83,7 +88,7 @@ export default function WallShape({ element, selected, onSelect, onDragEnd }: Wa
           dx={dx}
           dy={dy}
           color={colors.selectedStroke}
-          radius={8}
+          radius={7}
         />
       ) : null}
     </Group>
