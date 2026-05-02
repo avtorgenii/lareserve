@@ -135,7 +135,11 @@ const floorPlanSlice = createSlice({
 
     moveWallEndpoint: (state, action: PayloadAction<MoveWallEndpointPayload>) => {
       const element = state.elements.find((e) => e.id === action.payload.id);
-      if (!element || (element.type !== 'wall' && element.type !== 'separator' && element.type !== 'window')) return;
+      if (
+        !element ||
+        (element.type !== 'wall' && element.type !== 'separator' && element.type !== 'window')
+      )
+        return;
 
       const { endpoint, x, y } = action.payload;
       if (endpoint === 'start' && element.x === x && element.y === y) return;

@@ -117,13 +117,17 @@ export default function FloorPlanSidebar() {
       id: 'wall',
       label: 'Sciana',
       onClick: () =>
-        dispatch(addWall({ x: center.x - 110, y: center.y, x2: center.x + 110, y2: center.y, height: 20 })),
+        dispatch(
+          addWall({ x: center.x - 110, y: center.y, x2: center.x + 110, y2: center.y, height: 20 })
+        ),
     },
     {
       id: 'window',
       label: 'Okno',
       onClick: () =>
-        dispatch(addWindow({ x: center.x - 70, y: center.y, x2: center.x + 70, y2: center.y, height: 12 })),
+        dispatch(
+          addWindow({ x: center.x - 70, y: center.y, x2: center.x + 70, y2: center.y, height: 12 })
+        ),
     },
     {
       id: 'door',
@@ -134,7 +138,15 @@ export default function FloorPlanSidebar() {
       id: 'divider',
       label: 'Separator',
       onClick: () =>
-        dispatch(addSeparator({ x: center.x - 60, y: center.y, x2: center.x + 60, y2: center.y, height: 8 })),
+        dispatch(
+          addSeparator({
+            x: center.x - 60,
+            y: center.y,
+            x2: center.x + 60,
+            y2: center.y,
+            height: 8,
+          })
+        ),
     },
   ];
 

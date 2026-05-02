@@ -15,12 +15,23 @@ import CanvasGrid from './canvas/CanvasGrid';
 import { ELEMENT_RENDER_ORDER } from './canvas/elementRegistry';
 import FloorElementShape from './canvas/FloorElementShape';
 
+import type { CanvasMode, FloorElement, TableStatus } from '../model/types';
 import type { KonvaEventObject } from 'konva/lib/Node';
 
 import useContainerSize from '@/shared/lib/useContainerSize';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
-export default function FloorPlanCanvas() {
+type FloorPlanCanvasProps = {
+  mode?: CanvasMode;
+  tableStatuses?: Record<string, TableStatus>;
+  onTableClick?: (elementId: string) => void;
+};
+
+export default function FloorPlanCanvas({
+  mode = 'edit',
+  tableStatuses,
+  onTableClick,
+}: FloorPlanCanvasProps) {
   const dispatch = useAppDispatch();
   const elements = useAppSelector(selectFloorPlanElements);
   const selectedElementId = useAppSelector(selectSelectedElementId);
@@ -50,6 +61,25 @@ export default function FloorPlanCanvas() {
     const stage = event.target.getStage();
     return stage ? stage.getPointerPosition() : null;
   };
+
+  const isEditing = mode === 'edit';
+
+  const buildOnSelect = (element: FloorElement) => {
+    if (isEditing) return () => dispatch(selectElement(element.id));
+    const isTable = element.type === 'roundTable' || element.type === 'rectTable';
+    if (isTable) {
+      return () => {
+        dispatch(selectElement(element.id));
+        onTableClick?.(element.id);
+      };
+    }
+    return () => {};
+  };
+
+  const buildOnDragEnd = (element: FloorElement) =>
+    isEditing
+      ? (x: number, y: number) => dispatch(moveElement({ id: element.id, x, y }))
+      : () => {};
 
   const handleStagePointerDown = (event: KonvaEventObject<MouseEvent | TouchEvent>) => {
     if (event.target !== event.target.getStage()) return;
@@ -109,8 +139,10 @@ export default function FloorPlanCanvas() {
                     key={element.id}
                     element={element}
                     selected={selectedElementId === element.id}
-                    onSelect={() => dispatch(selectElement(element.id))}
-                    onDragEnd={(x, y) => dispatch(moveElement({ id: element.id, x, y }))}
+                    onSelect={buildOnSelect(element)}
+                    onDragEnd={buildOnDragEnd(element)}
+                    mode={mode}
+                    status={tableStatuses?.[element.id]}
                   />
                 ))}
               </Group>

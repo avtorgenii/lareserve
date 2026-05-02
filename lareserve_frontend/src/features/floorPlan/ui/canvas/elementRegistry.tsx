@@ -4,7 +4,7 @@ import TableShape from './TableShape';
 import WallShape from './WallShape';
 import WindowShape from './WindowShape';
 
-import type { FloorElement, FloorElementType } from '../../model/types';
+import type { CanvasMode, FloorElement, FloorElementType, TableStatus } from '../../model/types';
 import type { ComponentType } from 'react';
 
 export type ShapeProps<T extends FloorElement> = {
@@ -12,6 +12,8 @@ export type ShapeProps<T extends FloorElement> = {
   selected: boolean;
   onSelect: () => void;
   onDragEnd: (x: number, y: number) => void;
+  mode?: CanvasMode;
+  status?: TableStatus;
 };
 
 type ElementRegistry = {

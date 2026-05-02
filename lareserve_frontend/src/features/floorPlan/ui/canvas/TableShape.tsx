@@ -2,7 +2,12 @@ import { Circle, Group, Rect, Text } from 'react-konva';
 
 import { setCursor } from '../../lib/setCursor';
 
-import type { RectTableElement, RoundTableElement } from '../../model/types';
+import type {
+  CanvasMode,
+  RectTableElement,
+  RoundTableElement,
+  TableStatus,
+} from '../../model/types';
 
 import { useCssVarColors } from '@/shared/lib/useCssVarColors';
 
@@ -11,6 +16,8 @@ type TableShapeProps = {
   selected: boolean;
   onSelect: () => void;
   onDragEnd: (x: number, y: number) => void;
+  mode?: CanvasMode;
+  status?: TableStatus;
 };
 
 type TableThemeColors = {
@@ -35,6 +42,42 @@ const TABLE_COLOR_VARS: Record<keyof TableThemeColors, string> = {
   fill: '--color-surface',
   text: '--color-text-subtle',
   selectedText: '--color-primary-hover',
+};
+
+type StatusColors = {
+  availableStroke: string;
+  availableFill: string;
+  availableText: string;
+  reservedStroke: string;
+  reservedFill: string;
+  reservedText: string;
+  occupiedStroke: string;
+  occupiedFill: string;
+  occupiedText: string;
+};
+
+const STATUS_COLOR_VARS: Record<keyof StatusColors, string> = {
+  availableStroke: '--color-status-available-stroke',
+  availableFill: '--color-status-available-fill',
+  availableText: '--color-status-available-text',
+  reservedStroke: '--color-status-reserved-stroke',
+  reservedFill: '--color-status-reserved-fill',
+  reservedText: '--color-status-reserved-text',
+  occupiedStroke: '--color-status-occupied-stroke',
+  occupiedFill: '--color-status-occupied-fill',
+  occupiedText: '--color-status-occupied-text',
+};
+
+const STATUS_FALLBACK_COLORS: StatusColors = {
+  availableStroke: '#a3a3a3',
+  availableFill: '#f5f5f5',
+  availableText: '#737373',
+  reservedStroke: '#10b981',
+  reservedFill: '#ecfdf5',
+  reservedText: '#065f46',
+  occupiedStroke: '#fb7185',
+  occupiedFill: '#fff1f2',
+  occupiedText: '#9f1239',
 };
 
 function renderRoundTable(element: RoundTableElement, selected: boolean, colors: TableThemeColors) {
@@ -151,26 +194,70 @@ function renderRectTable(element: RectTableElement, selected: boolean, colors: T
   );
 }
 
-export default function TableShape({ element, selected, onSelect, onDragEnd }: TableShapeProps) {
-  const colors = useCssVarColors(TABLE_COLOR_VARS, FALLBACK_COLORS);
+export default function TableShape({
+  element,
+  selected,
+  onSelect,
+  onDragEnd,
+  mode,
+  status,
+}: TableShapeProps) {
+  const baseColors = useCssVarColors(TABLE_COLOR_VARS, FALLBACK_COLORS);
+  const sc = useCssVarColors(STATUS_COLOR_VARS, STATUS_FALLBACK_COLORS);
+  const statusOverrides: Record<
+    TableStatus,
+    Pick<TableThemeColors, 'fill' | 'defaultStroke' | 'selectedStroke' | 'text' | 'selectedText'>
+  > = {
+    available: {
+      fill: sc.availableFill,
+      defaultStroke: sc.availableStroke,
+      selectedStroke: sc.availableStroke,
+      text: sc.availableText,
+      selectedText: sc.availableText,
+    },
+    reserved: {
+      fill: sc.reservedFill,
+      defaultStroke: sc.reservedStroke,
+      selectedStroke: sc.reservedStroke,
+      text: sc.reservedText,
+      selectedText: sc.reservedText,
+    },
+    occupied: {
+      fill: sc.occupiedFill,
+      defaultStroke: sc.occupiedStroke,
+      selectedStroke: sc.occupiedStroke,
+      text: sc.occupiedText,
+      selectedText: sc.occupiedText,
+    },
+  };
+  const colors = status ? { ...baseColors, ...statusOverrides[status] } : baseColors;
+  const isEditing = !mode || mode === 'edit';
 
   return (
     <Group
-      draggable
+      draggable={isEditing}
       x={element.x}
       y={element.y}
       onMouseDown={onSelect}
       onTouchStart={onSelect}
-      onMouseEnter={(e) => setCursor(e, 'grab')}
+      onMouseEnter={(e) => setCursor(e, isEditing ? 'grab' : 'pointer')}
       onMouseLeave={(e) => setCursor(e, 'default')}
-      onDragStart={(e) => {
-        onSelect();
-        setCursor(e, 'grabbing');
-      }}
-      onDragEnd={(e) => {
-        onDragEnd(e.target.x(), e.target.y());
-        setCursor(e, 'grab');
-      }}
+      onDragStart={
+        isEditing
+          ? (e) => {
+              onSelect();
+              setCursor(e, 'grabbing');
+            }
+          : undefined
+      }
+      onDragEnd={
+        isEditing
+          ? (e) => {
+              onDragEnd(e.target.x(), e.target.y());
+              setCursor(e, 'grab');
+            }
+          : undefined
+      }
     >
       {element.type === 'roundTable' ? renderRoundTable(element, selected, colors) : null}
       {element.type === 'rectTable' ? renderRectTable(element, selected, colors) : null}

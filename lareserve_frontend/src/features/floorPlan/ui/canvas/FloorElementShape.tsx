@@ -8,14 +8,19 @@ export default function FloorElementShape({
   selected,
   onSelect,
   onDragEnd,
+  mode,
+  status,
 }: ShapeProps<FloorElement>) {
   const Component = ELEMENT_REGISTRY[element.type];
+
   return (
     <Component
       element={element as never}
       selected={selected}
       onSelect={onSelect}
       onDragEnd={onDragEnd}
+      mode={mode}
+      status={status}
     />
   );
 }

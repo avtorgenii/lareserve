@@ -2,7 +2,7 @@ import { Arc, Group, Line } from 'react-konva';
 
 import { setCursor } from '../../lib/setCursor';
 
-import type { DoorElement } from '../../model/types';
+import type { CanvasMode, DoorElement } from '../../model/types';
 
 import { useCssVarColors } from '@/shared/lib/useCssVarColors';
 
@@ -26,30 +26,46 @@ type DoorShapeProps = {
   selected: boolean;
   onSelect: () => void;
   onDragEnd: (x: number, y: number) => void;
+  mode?: CanvasMode;
 };
 
-export default function DoorShape({ element, selected, onSelect, onDragEnd }: DoorShapeProps) {
+export default function DoorShape({
+  element,
+  selected,
+  onSelect,
+  onDragEnd,
+  mode,
+}: DoorShapeProps) {
   const colors = useCssVarColors(DOOR_COLOR_VARS, DOOR_FALLBACK_COLORS);
+  const isEditing = !mode || mode === 'edit';
 
   const strokeColor = selected ? colors.selectedStroke : colors.stroke;
 
   return (
     <Group
-      draggable
+      draggable={isEditing}
       x={element.x}
       y={element.y}
       onMouseDown={onSelect}
       onTouchStart={onSelect}
-      onMouseEnter={(e) => setCursor(e, 'grab')}
+      onMouseEnter={(e) => setCursor(e, isEditing ? 'grab' : 'default')}
       onMouseLeave={(e) => setCursor(e, 'default')}
-      onDragStart={(e) => {
-        onSelect();
-        setCursor(e, 'grabbing');
-      }}
-      onDragEnd={(e) => {
-        onDragEnd(e.target.x(), e.target.y());
-        setCursor(e, 'grab');
-      }}
+      onDragStart={
+        isEditing
+          ? (e) => {
+              onSelect();
+              setCursor(e, 'grabbing');
+            }
+          : undefined
+      }
+      onDragEnd={
+        isEditing
+          ? (e) => {
+              onDragEnd(e.target.x(), e.target.y());
+              setCursor(e, 'grab');
+            }
+          : undefined
+      }
     >
       {/* Door leaf */}
       <Line

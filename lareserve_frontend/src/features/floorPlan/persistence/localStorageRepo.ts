@@ -56,7 +56,7 @@ function toPersistedState(state: FloorPlanState): FloorPlanPersistedState {
 function migrateElement(el: Record<string, unknown>): Record<string, unknown> {
   if (
     (el.type === 'wall' || el.type === 'separator') &&
-    el.x2 == null &&
+    el.x2 === null &&
     typeof el.width === 'number'
   ) {
     const x = typeof el.x === 'number' ? el.x : 0;

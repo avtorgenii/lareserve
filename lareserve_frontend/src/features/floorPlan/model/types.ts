@@ -1,4 +1,14 @@
-export type FloorElementType = 'roundTable' | 'rectTable' | 'wall' | 'window' | 'door' | 'separator';
+export type FloorElementType =
+  | 'roundTable'
+  | 'rectTable'
+  | 'wall'
+  | 'window'
+  | 'door'
+  | 'separator';
+
+export type TableStatus = 'available' | 'reserved' | 'occupied';
+
+export type CanvasMode = 'edit' | 'view';
 
 type BaseElement = {
   id: string;

@@ -1,10 +1,11 @@
 import { Circle } from 'react-konva';
 
-import { moveWallEndpoint } from '../../model/floorPlanSlice';
 import { snapToGrid } from '../../lib/snapToGrid';
-import { useAppDispatch } from '@/store/hooks';
+import { moveWallEndpoint } from '../../model/floorPlanSlice';
 
 import type { KonvaEventObject } from 'konva/lib/Node';
+
+import { useAppDispatch } from '@/store/hooks';
 
 type EndpointHandlesProps = {
   elementId: string;
@@ -36,10 +37,7 @@ export default function EndpointHandles({
 }: EndpointHandlesProps) {
   const dispatch = useAppDispatch();
 
-  const handleEndpointDragEnd = (
-    endpoint: 'start' | 'end',
-    e: KonvaEventObject<MouseEvent>
-  ) => {
+  const handleEndpointDragEnd = (endpoint: 'start' | 'end', e: KonvaEventObject<MouseEvent>) => {
     e.cancelBubble = true;
     const circle = e.target;
     const lx = circle.x();
