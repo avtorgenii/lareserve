@@ -37,7 +37,7 @@ def setup_loguru():
         format=formatter,
         level="DEBUG",
         colorize=True,
-        enqueue=True,  # Thread-safe
+        enqueue=False,
     )
 
     # File handler for all logs
@@ -47,7 +47,7 @@ def setup_loguru():
         level="DEBUG",
         rotation='weekly',
         retention="4 weeks",
-        enqueue=True,
+        enqueue=True,  # Thread-safe
         backtrace=True,
         diagnose=True
     )
@@ -59,7 +59,7 @@ def setup_loguru():
         level="ERROR",
         rotation='weekly',
         retention="4 weeks",
-        enqueue=True,
+        enqueue=True,  # Thread-safe
         backtrace=True,
         diagnose=True
     )

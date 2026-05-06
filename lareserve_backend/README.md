@@ -45,7 +45,7 @@ Run `uv sync` and apply migrations before continuing
 
 ```
 id	domain	        name
-1	127.0.0.1:8000	La Reserve
+2	127.0.0.1:8000	La Reserve
 ```
 
 2. Table `socialaccount_socialapp`

@@ -15,18 +15,6 @@ class User(AbstractUser):
         return f"{self.email} ({self.first_name})"
 
 
-# ##### ASSETS & LAYOUTS #####
-class AssetTemplate(models.Model):
-    """Library of common elements (tables, chairs etc.)"""
-    name = models.CharField(max_length=100)
-    icon = models.URLField()
-    scale_x = models.DecimalField(max_digits=10, decimal_places=4)
-    scale_y = models.DecimalField(max_digits=10, decimal_places=4)
-
-    def __str__(self):
-        return self.name
-
-
 # ##### RESTAURANTS #####
 class Restaurant(models.Model):
     name = models.CharField(max_length=255)
@@ -34,12 +22,21 @@ class Restaurant(models.Model):
     # Address data
     country = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
-    street = models.CharField(max_length=255)
+    street = models.CharField(max_length=255, null=True)
     building_number = models.CharField(max_length=20)
-    postal_code = models.CharField(max_length=10)
+    postal_code = models.CharField(max_length=10, null=True)
 
-    # Storing list of objects [{template_id, floor, loc_x, loc_y, scale_x, scale_y, rotation}, ...]
-    layout = models.JSONField(default=list, help_text="List of layout elements")
+    # Storing list of objects
+    """
+    { 
+        floors: 
+        {
+            1: {id, label, type, x, y, scale_x, scale_y, rotation, ...},
+            2: {id, label, type, x, y, scale_x, scale_y, rotation, ...},
+        }
+    }
+    """
+    layout = models.JSONField(default=dict, help_text="Layout elements", null=True)
 
     def __str__(self):
         return self.name
@@ -58,6 +55,7 @@ class Reservation(models.Model):
         default=Status.CONFIRMED
     )
 
+    table_id = models.IntegerField(null=False, blank=False)
     date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
 
