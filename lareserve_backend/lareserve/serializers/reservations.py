@@ -6,6 +6,16 @@ from ..models import Reservation, Restaurant
 # Default buffer time between reservations at the same table
 RESERVATION_BUFFER_HOURS = 2
 
+class ReservationSummarySerializer(serializers.ModelSerializer):
+    guest_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    phone = serializers.CharField(source='user.phone', read_only=True)
+
+    class Meta:
+        model = Reservation
+        fields = ['id', 'date', 'table_id', 'status', 'guest_name', 'email', 'phone', 'special_requests']
+
+
 class ReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation

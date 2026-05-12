@@ -31,8 +31,8 @@ class Restaurant(models.Model):
     { 
         floors: 
         {
-            1: {id, label, type, x, y, scale_x, scale_y, rotation, ...},
-            2: {id, label, type, x, y, scale_x, scale_y, rotation, ...},
+            "1": {id, label, type, x, y, scale_x, scale_y, rotation, ...},
+            "2": {id, label, type, x, y, scale_x, scale_y, rotation, ...},
         }
     }
     """
@@ -54,6 +54,8 @@ class Reservation(models.Model):
         choices=Status.choices,
         default=Status.CONFIRMED
     )
+
+    special_requests = models.TextField(blank=True, null=True)
 
     table_id = models.IntegerField(null=False, blank=False)
     date = models.DateTimeField()
