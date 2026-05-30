@@ -1,10 +1,5 @@
-import CustomerReservationPage from '@/features/customerReservation/ui/CustomerReservationPage';
-import AppLayout from '@/shared/ui/AppLayout';
+import { redirect } from 'next/navigation';
 
 export default function ReservePage() {
-  return (
-    <AppLayout>
-      <CustomerReservationPage />
-    </AppLayout>
-  );
+  redirect('/');
 }

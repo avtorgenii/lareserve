@@ -1,5 +1,6 @@
 'use client';
 
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useEffect } from 'react';
 import { Provider } from 'react-redux';
 
@@ -56,9 +57,11 @@ function FloorPlanHydrator() {
 
 export default function AppProviders({ children }: Props) {
   return (
-    <Provider store={store}>
-      <FloorPlanHydrator />
-      {children}
-    </Provider>
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
+      <Provider store={store}>
+        <FloorPlanHydrator />
+        {children}
+      </Provider>
+    </GoogleOAuthProvider>
   );
 }

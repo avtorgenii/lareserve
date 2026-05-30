@@ -8,6 +8,14 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  if (token) {
+    config.headers['Authorization'] = `Token ${token}`;
+  }
+  return config;
+});
+
+apiClient.interceptors.request.use((config) => {
   if (config.baseURL && config.url) {
     const fullURL = config.baseURL + config.url;
     console.log(`[API] Request: ${config.method?.toUpperCase()} ${fullURL}`, config);
