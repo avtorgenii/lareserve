@@ -1,6 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
 
-import type { Reservation } from './types';
+import type { Reservation, ReservationsLoadingState } from './types';
 import type { TableStatus } from '@/features/floorPlan/model/types';
 import type { RootState } from '@/store/rootReducer';
 
@@ -48,3 +48,6 @@ export const selectTableStatusCounts = createSelector(
     return counts;
   }
 );
+
+export const selectReservationsLoadingState = (state: RootState): ReservationsLoadingState =>
+  state.reservations.loadingState;

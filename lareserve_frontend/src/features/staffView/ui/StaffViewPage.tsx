@@ -1,18 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { zoomIn, zoomOut } from '@/features/floorPlan/model/floorPlanSlice';
 import { selectFloorPlanElements, selectViewportScale } from '@/features/floorPlan/model/selectors';
 import FloorPlanCanvas from '@/features/floorPlan/ui/FloorPlanCanvas';
 import FloorPlanLegend from '@/features/floorPlan/ui/shared/FloorPlanLegend';
 import FloorSelector from '@/features/floorPlan/ui/shared/FloorSelector';
+import { fetchTodaysReservations } from '@/features/reservations/model/reservationsSlice';
 import {
   selectTableStatusCounts,
   selectTableStatusesById,
   selectTodaysReservations,
   selectReservationsForTable,
   selectTableStatusesByLabel,
+  selectReservationsLoadingState,
 } from '@/features/reservations/model/selectors';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
@@ -56,6 +58,12 @@ export default function StaffViewPage() {
   const todaysReservations = useAppSelector(selectTodaysReservations);
   const viewportScale = useAppSelector(selectViewportScale);
   const statusesByLabel = useAppSelector(selectTableStatusesByLabel);
+  const loadingState = useAppSelector(selectReservationsLoadingState);
+
+  // Load today's reservations from API on mount
+  useEffect(() => {
+    void dispatch(fetchTodaysReservations());
+  }, [dispatch]);
 
   const selectedElement = selectedElementId
     ? elements.find((el) => el.id === selectedElementId)
@@ -117,23 +125,29 @@ export default function StaffViewPage() {
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
             Nadchodzące dzisiaj
           </p>
-          <ul className="space-y-2">
-            {todaysReservations.map((reservation) => (
-              <li key={reservation.id} className="rounded-lg border border-border p-2">
-                <div className="flex items-start justify-between gap-1">
-                  <span className="text-sm font-medium text-text">{reservation.guestName}</span>
-                  <span
-                    className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${RESERVATION_STATUS_COLORS[reservation.status]}`}
-                  >
-                    {RESERVATION_STATUS_LABELS[reservation.status]}
-                  </span>
-                </div>
-                <p className="mt-0.5 text-xs text-text-muted">
-                  {reservation.time} · {reservation.partySize} os. · {reservation.tableLabel}
-                </p>
-              </li>
-            ))}
-          </ul>
+          {loadingState === 'loading' ? (
+            <p className="text-xs text-text-muted">Ładowanie...</p>
+          ) : loadingState === 'error' ? (
+            <p className="text-xs text-rose-500">Błąd ładowania</p>
+          ) : (
+            <ul className="space-y-2">
+              {todaysReservations.map((reservation) => (
+                <li key={reservation.id} className="rounded-lg border border-border p-2">
+                  <div className="flex items-start justify-between gap-1">
+                    <span className="text-sm font-medium text-text">{reservation.guestName}</span>
+                    <span
+                      className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${RESERVATION_STATUS_COLORS[reservation.status]}`}
+                    >
+                      {RESERVATION_STATUS_LABELS[reservation.status]}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-text-muted">
+                    {reservation.time} · {reservation.tableLabel}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </aside>
 
@@ -209,7 +223,9 @@ export default function StaffViewPage() {
                         <span className="font-medium text-text">{next.guestName}</span>
                         <span className="text-xs text-text-muted">{next.time}</span>
                       </div>
-                      <p className="mt-0.5 text-xs text-text-muted">{next.partySize} osoby</p>
+                      {next.partySize !== undefined && (
+                        <p className="mt-0.5 text-xs text-text-muted">{next.partySize} osoby</p>
+                      )}
                     </div>
                   ) : null;
                 })()}
@@ -226,12 +242,9 @@ export default function StaffViewPage() {
                       <div>
                         <p className="text-sm font-medium text-text">{reservation.guestName}</p>
                         <p className="text-xs text-text-muted">
-                          {reservation.time} · {reservation.partySize}{' '}
-                          {reservation.partySize === 1
-                            ? 'osoba'
-                            : reservation.partySize < 5
-                              ? 'osoby'
-                              : 'osób'}
+                          {reservation.time}
+                          {reservation.partySize !== undefined &&
+                            ` · ${reservation.partySize} ${reservation.partySize === 1 ? 'osoba' : reservation.partySize < 5 ? 'osoby' : 'osób'}`}
                         </p>
                       </div>
                       <span

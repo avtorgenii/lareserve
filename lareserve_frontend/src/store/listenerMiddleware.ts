@@ -21,7 +21,9 @@ import {
   zoomIn,
   zoomOut,
 } from '@/features/floorPlan/model/floorPlanSlice';
+import { saveFloorPlanToApi } from '@/features/floorPlan/persistence/httpRepo';
 import { saveFloorPlanToLocalStorage } from '@/features/floorPlan/persistence/localStorageRepo';
+import { RESTAURANT_ID } from '@/shared/lib/constants';
 
 export const listenerMiddleware = createListenerMiddleware();
 
@@ -57,6 +59,10 @@ listenerMiddleware.startListening({
   actionCreator: saveFloorPlanRequested,
   effect: async (_action, api) => {
     const state = api.getState() as RootState;
-    saveFloorPlanToLocalStorage(state.floorPlan);
+    try {
+      await saveFloorPlanToApi(RESTAURANT_ID, state.floorPlan.elements);
+    } catch (error) {
+      console.error('[FloorPlan] Failed to save to API:', error);
+    }
   },
 });

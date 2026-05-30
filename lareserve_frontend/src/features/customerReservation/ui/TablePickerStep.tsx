@@ -40,7 +40,7 @@ export default function TablePickerStep({
       <div className="flex min-h-0 flex-1">
         {/* Canvas with absolute overlays */}
         <div className="relative min-h-0 flex-1">
-          <FloorPlanCanvas mode="select" onTableClick={onTableClick} />
+          <FloorPlanCanvas mode="view" onTableClick={onTableClick} />
 
           {/* Top overlay: plan label + floor tabs */}
           <div className="pointer-events-none absolute left-0 right-0 top-0 flex items-start justify-between px-6 pt-5">

@@ -1,81 +1,36 @@
-// PLIK DO DOSTOSOWANIA JAK BEDZIE API
+import type { FloorElement } from '../model/types';
 
-import axios from 'axios';
+import { apiClient } from '@/shared/lib/apiClient';
 
-import type { FloorPlanState } from '../model/types';
-
-type FloorPlanDto = FloorPlanState;
-
-type SaveFloorPlanRequest = {
-  restaurantId: string;
-  floorPlanId: string;
-  data: FloorPlanDto;
+/** Shape returned by GET /api/v1/restaurants/{id}/layout/ */
+type BackendLayout = {
+  floors: Record<string, FloorElement>;
 };
 
-type LoadFloorPlanRequest = {
-  restaurantId: string;
-  floorPlanId: string;
-};
-
-type HttpRepoConfig = {
-  baseUrl?: string;
-};
-
-const DEFAULT_BASE_URL = '/api/floor-plans';
-
-function createHttpClient(config?: HttpRepoConfig) {
-  return axios.create({
-    baseURL: config?.baseUrl || DEFAULT_BASE_URL,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+/**
+ * Load floor plan elements from the backend.
+ * Backend format: { floors: { [elementId]: element } }
+ * Returns a flat array of elements (empty array when the restaurant has no layout yet).
+ */
+export async function loadFloorPlanFromApi(restaurantId: number): Promise<FloorElement[]> {
+  const response = await apiClient.get<BackendLayout>(`/restaurants/${restaurantId}/layout/`);
+  const floors = response.data?.floors;
+  if (!floors) return [];
+  return Object.values(floors);
 }
 
-export async function loadFloorPlanFromApi(
-  params: LoadFloorPlanRequest,
-  config?: HttpRepoConfig
-): Promise<FloorPlanState> {
-  const client = createHttpClient(config);
-
-  const response = await client.get<FloorPlanDto>(`/${params.restaurantId}/${params.floorPlanId}`);
-
-  return response.data;
-}
-
+/**
+ * Save floor plan elements to the backend.
+ * Converts the flat elements array to { floors: { [id]: element } }.
+ * Requires authentication — will throw with 401 until auth is wired up.
+ */
 export async function saveFloorPlanToApi(
-  payload: SaveFloorPlanRequest,
-  config?: HttpRepoConfig
-): Promise<FloorPlanState> {
-  const client = createHttpClient(config);
-
-  const response = await client.put<FloorPlanDto>(
-    `/${payload.restaurantId}/${payload.floorPlanId}`,
-    payload.data
-  );
-
-  return response.data;
-}
-
-export async function createFloorPlanInApi(
-  payload: SaveFloorPlanRequest,
-  config?: HttpRepoConfig
-): Promise<FloorPlanState> {
-  const client = createHttpClient(config);
-
-  const response = await client.post<FloorPlanDto>(
-    `/${payload.restaurantId}/${payload.floorPlanId}`,
-    payload.data
-  );
-
-  return response.data;
-}
-
-export async function deleteFloorPlanFromApi(
-  params: LoadFloorPlanRequest,
-  config?: HttpRepoConfig
+  restaurantId: number,
+  elements: FloorElement[]
 ): Promise<void> {
-  const client = createHttpClient(config);
-
-  await client.delete(`/${params.restaurantId}/${params.floorPlanId}`);
+  const floors: Record<string, FloorElement> = {};
+  for (const el of elements) {
+    floors[el.id] = el;
+  }
+  await apiClient.put(`/restaurants/${restaurantId}/layout/update/`, { floors });
 }
