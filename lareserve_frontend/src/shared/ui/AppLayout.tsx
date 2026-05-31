@@ -10,7 +10,7 @@ export default function AppLayout({
   rightSlot,
 }: AppLayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex h-screen flex-col overflow-hidden bg-white">
       <header className="flex h-14 items-center border-b border-border bg-white px-6">
         {/* Logo */}
         <div className="flex flex-1 items-center gap-3">

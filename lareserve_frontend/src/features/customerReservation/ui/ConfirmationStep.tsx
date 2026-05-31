@@ -32,7 +32,7 @@ export default function ConfirmationStep({
   ];
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-surface-subtle px-4 py-12">
+    <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-surface-subtle px-4 py-12">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
         <h2 className="mb-1 text-xl font-semibold text-text">Potwierdź rezerwację</h2>
         <p className="mb-8 text-sm text-text-muted">Sprawdź szczegóły przed wysłaniem.</p>

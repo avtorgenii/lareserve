@@ -41,7 +41,7 @@ export default function DateTimePicker({
   onConfirm,
 }: DateTimePickerProps) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-surface-subtle px-4 py-12">
+    <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-surface-subtle px-4 py-12">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
         <h2 className="mb-6 text-xl font-semibold text-text">Wybierz datę i czas</h2>
 
@@ -106,7 +106,7 @@ export default function DateTimePicker({
           disabled={!date || !time || datesLoading || timesLoading}
           className="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Dalej — wybierz stolik
+          Dalej
         </button>
       </div>
     </div>

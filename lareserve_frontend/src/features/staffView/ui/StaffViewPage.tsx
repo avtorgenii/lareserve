@@ -161,7 +161,7 @@ export default function StaffViewPage() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="flex items-center px-6 pt-4 pb-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">
-            Plan restauracji — Parter
+            Plan restauracji
           </span>
         </div>
 
