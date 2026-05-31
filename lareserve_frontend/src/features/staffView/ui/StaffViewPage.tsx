@@ -7,14 +7,15 @@ import { selectFloorPlanElements, selectViewportScale } from '@/features/floorPl
 import FloorPlanCanvas from '@/features/floorPlan/ui/FloorPlanCanvas';
 import FloorPlanLegend from '@/features/floorPlan/ui/shared/FloorPlanLegend';
 import FloorSelector from '@/features/floorPlan/ui/shared/FloorSelector';
-import { fetchTodaysReservations } from '@/features/reservations/model/reservationsSlice';
+import { fetchTodaysReservations, fetchTableReservations, cancelReservation, finishReservation } from '@/features/reservations/model/reservationsSlice';
 import {
   selectTableStatusCounts,
   selectTableStatusesById,
   selectTodaysReservations,
-  selectReservationsForTable,
   selectTableStatusesByLabel,
   selectReservationsLoadingState,
+  selectSelectedTableReservations,
+  selectSelectedTableLoadingState,
 } from '@/features/reservations/model/selectors';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
@@ -59,6 +60,10 @@ export default function StaffViewPage() {
   const viewportScale = useAppSelector(selectViewportScale);
   const statusesByLabel = useAppSelector(selectTableStatusesByLabel);
   const loadingState = useAppSelector(selectReservationsLoadingState);
+  const tableReservations = useAppSelector(selectSelectedTableReservations);
+  const selectedTableLoadingState = useAppSelector(selectSelectedTableLoadingState);
+
+  const today = new Date().toISOString().slice(0, 10);
 
   // Load today's reservations from API on mount
   useEffect(() => {
@@ -69,14 +74,15 @@ export default function StaffViewPage() {
     ? elements.find((el) => el.id === selectedElementId)
     : null;
 
-  const tableReservations = useAppSelector((state) =>
-    selectedElement ? selectReservationsForTable(state, selectedElement.label) : []
-  );
-
   const selectedTableStatus = selectedElement ? statusesByLabel[selectedElement.label] : undefined;
 
   const handleTableClick = (elementId: string) => {
-    setSelectedElementId((prev) => (prev === elementId ? null : elementId));
+    if (selectedElementId === elementId) {
+      setSelectedElementId(null);
+    } else {
+      setSelectedElementId(elementId);
+      void dispatch(fetchTableReservations({ tableId: elementId, date: today }));
+    }
   };
 
   return (
@@ -223,6 +229,8 @@ export default function StaffViewPage() {
                         <span className="font-medium text-text">{next.guestName}</span>
                         <span className="text-xs text-text-muted">{next.time}</span>
                       </div>
+                      {next.email && <p className="mt-0.5 text-xs text-text-muted">{next.email}</p>}
+                      {next.phone && <p className="mt-0.5 text-xs text-text-muted">{next.phone}</p>}
                       {next.partySize !== undefined && (
                         <p className="mt-0.5 text-xs text-text-muted">{next.partySize} osoby</p>
                       )}
@@ -233,28 +241,62 @@ export default function StaffViewPage() {
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
                   Rezerwacje {selectedElement.label}
                 </p>
-                <ul className="space-y-2">
-                  {tableReservations.map((reservation) => (
-                    <li
-                      key={reservation.id}
-                      className="flex items-start justify-between rounded-lg border border-border p-3"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-text">{reservation.guestName}</p>
-                        <p className="text-xs text-text-muted">
-                          {reservation.time}
-                          {reservation.partySize !== undefined &&
-                            ` · ${reservation.partySize} ${reservation.partySize === 1 ? 'osoba' : reservation.partySize < 5 ? 'osoby' : 'osób'}`}
-                        </p>
-                      </div>
-                      <span
-                        className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${RESERVATION_STATUS_COLORS[reservation.status]}`}
+                {selectedTableLoadingState === 'loading' ? (
+                  <p className="text-xs text-text-muted">Ładowanie...</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {tableReservations.map((reservation) => (
+                      <li
+                        key={reservation.id}
+                        className="rounded-lg border border-border p-3 space-y-2"
                       >
-                        {RESERVATION_STATUS_LABELS[reservation.status]}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-text">{reservation.guestName}</p>
+                            <p className="text-xs text-text-muted">
+                              {reservation.time}
+                              {reservation.partySize !== undefined &&
+                                ` · ${reservation.partySize} ${
+                                  reservation.partySize === 1
+                                    ? 'osoba'
+                                    : reservation.partySize < 5
+                                      ? 'osoby'
+                                      : 'osób'
+                                }`}
+                            </p>
+                            {reservation.email && (
+                              <p className="text-xs text-text-muted">{reservation.email}</p>
+                            )}
+                            {reservation.phone && (
+                              <p className="text-xs text-text-muted">{reservation.phone}</p>
+                            )}
+                          </div>
+                          <span
+                            className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${RESERVATION_STATUS_COLORS[reservation.status]}`}
+                          >
+                            {RESERVATION_STATUS_LABELS[reservation.status]}
+                          </span>
+                        </div>
+                        {reservation.status === 'upcoming' && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => void dispatch(finishReservation(reservation.id))}
+                              className="flex-1 rounded border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+                            >
+                              Zakończ
+                            </button>
+                            <button
+                              onClick={() => void dispatch(cancelReservation(reservation.id))}
+                              className="flex-1 rounded border border-rose-300 bg-rose-50 px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-100"
+                            >
+                              Anuluj
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </>
             )}
 

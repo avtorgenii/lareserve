@@ -1,18 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-
 import { redoFloorPlan, saveFloorPlanRequested, undoFloorPlan } from '../model/floorPlanSlice';
 import { selectCanRedo, selectCanUndo } from '../model/selectors';
 
 import { Button, IconButton } from '@/shared/ui';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import Link from 'next/link';
 
 export default function FloorPlanTopBar() {
   const dispatch = useAppDispatch();
   const canUndo = useAppSelector(selectCanUndo);
   const canRedo = useAppSelector(selectCanRedo);
-  const [saveTick, setSaveTick] = useState(0);
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-surface px-4">
@@ -35,6 +33,11 @@ export default function FloorPlanTopBar() {
       </div>
 
       <div className="flex items-center gap-2">
+        <Link href="/staff">
+          <IconButton size="md" aria-label="Wróć do strony personelu" title="Wróć do strony personelu">
+            ↩
+          </IconButton>
+        </Link>
         <Button size="sm" disabled={!canUndo} onClick={() => dispatch(undoFloorPlan())}>
           Undo
         </Button>
@@ -46,10 +49,9 @@ export default function FloorPlanTopBar() {
           variant="primary"
           onClick={() => {
             dispatch(saveFloorPlanRequested());
-            setSaveTick((value) => value + 1);
           }}
         >
-          {saveTick > 0 ? 'Zapisz ponownie' : 'Zapisz'}
+          {'Zapisz'}
         </Button>
       </div>
     </header>

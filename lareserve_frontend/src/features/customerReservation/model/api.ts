@@ -32,7 +32,7 @@ export async function fetchAvailableTimes(
 export async function submitReservation(
   restaurantId: number,
   tableId: string,
-  dateTime: string, // ISO datetime "YYYY-MM-DDTHH:MM:00"
+  dateTime: string, // ISO datetime "YYYY-MM-DDTHH:MM:00Z"
   specialRequests?: string
 ): Promise<void> {
   await apiClient.post('/reservations/', {

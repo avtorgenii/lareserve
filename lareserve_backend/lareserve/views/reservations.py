@@ -97,7 +97,7 @@ def reservation_list_today(request):
 @extend_schema(
     parameters=[
         OpenApiParameter(name="restaurant_id", type=OpenApiTypes.INT, location=OpenApiParameter.QUERY, required=True),
-        OpenApiParameter(name="table_id", type=OpenApiTypes.INT, location=OpenApiParameter.QUERY, required=True),
+        OpenApiParameter(name="table_id", type=OpenApiTypes.STR, location=OpenApiParameter.QUERY, required=True),
         OpenApiParameter(name="date", type=OpenApiTypes.DATE, location=OpenApiParameter.QUERY, required=True),
     ],
     responses={200: ReservationSummarySerializer(many=True)}

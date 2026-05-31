@@ -1,16 +1,46 @@
 import { createSelector } from '@reduxjs/toolkit';
 
+import type { BackendReservation } from './api';
 import type { Reservation, ReservationsLoadingState } from './types';
-import type { TableStatus } from '@/features/floorPlan/model/types';
+import type { FloorElement, TableStatus } from '@/features/floorPlan/model/types';
 import type { RootState } from '@/store/rootReducer';
 
 import { selectFloorPlanElements } from '@/features/floorPlan/model/selectors';
 
-export const selectAllReservations = (state: RootState): Reservation[] =>
-  state.reservations.reservations;
+const selectRawReservations = (state: RootState): BackendReservation[] =>
+  state.reservations.rawReservations;
 
-export const selectTableStatusesByLabel = (state: RootState): Record<string, TableStatus> =>
-  state.reservations.tableStatusesByLabel;
+const selectRawSelectedTableReservations = (state: RootState): BackendReservation[] =>
+  state.reservations.rawSelectedTableReservations;
+
+function mapRaw(r: BackendReservation, elements: FloorElement[]): Reservation {
+  const el = elements.find((e) => e.id === r.table_id);
+  return {
+    id: r.id.toString(),
+    tableLabel: el?.label ?? `T-${r.table_id}`,
+    tableId: r.table_id,
+    guestName: r.guest_name || '',
+    email: r.email || undefined,
+    phone: r.phone || undefined,
+    time: r.date.substring(11, 16),
+    status: r.status === 'FINISHED' ? 'completed' : 'upcoming',
+  };
+}
+
+export const selectTableStatusesByLabel = createSelector(
+  selectRawReservations,
+  selectFloorPlanElements,
+  (rawReservations, elements) => {
+    const result: Record<string, TableStatus> = {};
+    for (const r of rawReservations) {
+      if (r.status === 'CONFIRMED') {
+        const el = elements.find((e) => e.id === r.table_id);
+        if (el) result[el.label] = 'reserved';
+      }
+    }
+    return result;
+  }
+);
 
 /** Returns table statuses keyed by element ID (for use with FloorPlanCanvas tableStatuses prop) */
 export const selectTableStatusesById = createSelector(
@@ -28,14 +58,14 @@ export const selectTableStatusesById = createSelector(
   }
 );
 
-export const selectReservationsForTable = createSelector(
-  selectAllReservations,
-  (_: RootState, tableLabel: string) => tableLabel,
-  (reservations, tableLabel) => reservations.filter((r) => r.tableLabel === tableLabel)
-);
-
-export const selectTodaysReservations = createSelector(selectAllReservations, (reservations) =>
-  [...reservations].sort((a, b) => a.time.localeCompare(b.time))
+export const selectTodaysReservations = createSelector(
+  selectRawReservations,
+  selectFloorPlanElements,
+  (rawReservations, elements) =>
+    rawReservations
+      .filter((r) => r.status !== 'CANCELLED')
+      .map((r) => mapRaw(r, elements))
+      .sort((a, b) => a.time.localeCompare(b.time))
 );
 
 export const selectTableStatusCounts = createSelector(
@@ -51,3 +81,15 @@ export const selectTableStatusCounts = createSelector(
 
 export const selectReservationsLoadingState = (state: RootState): ReservationsLoadingState =>
   state.reservations.loadingState;
+
+export const selectSelectedTableReservations = createSelector(
+  selectRawSelectedTableReservations,
+  selectFloorPlanElements,
+  (rawReservations, elements) =>
+    rawReservations
+      .filter((r) => r.status !== 'CANCELLED')
+      .map((r) => mapRaw(r, elements))
+);
+
+export const selectSelectedTableLoadingState = (state: RootState): ReservationsLoadingState =>
+  state.reservations.selectedTableLoadingState;

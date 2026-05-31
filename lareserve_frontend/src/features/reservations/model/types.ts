@@ -1,15 +1,16 @@
-import type { TableStatus } from '@/features/floorPlan/model/types';
+import type { BackendReservation } from './api';
 
 export type ReservationStatus = 'upcoming' | 'current' | 'completed';
 
+/** Derived display type — never stored in Redux, only returned from selectors. */
 export type Reservation = {
   id: string;
   tableLabel: string;
-  /** Original backend table_id stored as string for future API calls (e.g. move/cancel). */
   tableId?: string;
   guestName: string;
+  email?: string;
+  phone?: string;
   time: string; // 'HH:MM'
-  /** Not provided by the backend — optional for display purposes only. */
   partySize?: number;
   status: ReservationStatus;
 };
@@ -17,8 +18,9 @@ export type Reservation = {
 export type ReservationsLoadingState = 'idle' | 'loading' | 'error';
 
 export type ReservationsState = {
-  /** Table statuses keyed by table label (e.g. 'T-01') — derived from today's reservations */
-  tableStatusesByLabel: Record<string, TableStatus>;
-  reservations: Reservation[];
+  /** Raw API responses — mapping to display types happens in selectors. */
+  rawReservations: BackendReservation[];
   loadingState: ReservationsLoadingState;
+  rawSelectedTableReservations: BackendReservation[];
+  selectedTableLoadingState: ReservationsLoadingState;
 };

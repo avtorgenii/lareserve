@@ -57,7 +57,7 @@ class Reservation(models.Model):
 
     special_requests = models.TextField(blank=True, null=True)
 
-    table_id = models.IntegerField(null=False, blank=False)
+    table_id = models.CharField(max_length=255, null=False, blank=False)
     date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
 

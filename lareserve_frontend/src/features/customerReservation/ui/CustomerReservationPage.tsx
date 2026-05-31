@@ -132,7 +132,7 @@ export default function CustomerReservationPage() {
 
   const handleConfirmReservation = async () => {
     if (!selectedElement) return;
-    const dateTime = `${selectedDate}T${selectedTime}:00`;
+    const dateTime = `${selectedDate}T${selectedTime}:00Z`;
     try {
       await submitReservation(
         RESTAURANT_ID,

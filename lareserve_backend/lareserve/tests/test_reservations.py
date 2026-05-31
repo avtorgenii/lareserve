@@ -16,10 +16,12 @@ class ReservationTests(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
 
+        self.table_id_1 = 'a1b2c3d4-0001-0001-0001-000000000001'
+        self.table_id_2 = 'a1b2c3d4-0002-0002-0002-000000000002'
         self.layout = {
             'floors': {
-                '1': {'id': 1, 'type': 'table', 'x': 0, 'y': 0, 'label': 'Table 1'},
-                '2': {'id': 2, 'type': 'table', 'x': 10, 'y': 10, 'label': 'Table 2'}
+                '1': {'id': self.table_id_1, 'type': 'table', 'x': 0, 'y': 0, 'label': 'Table 1'},
+                '2': {'id': self.table_id_2, 'type': 'table', 'x': 10, 'y': 10, 'label': 'Table 2'}
             }
         }
         self.restaurant = Restaurant.objects.create(
@@ -32,7 +34,7 @@ class ReservationTests(APITestCase):
         date = timezone.now() + timedelta(days=1)
         data = {
             'restaurant': self.restaurant.id,
-            'table_id': 1,
+            'table_id': self.table_id_1,
             'date': date.isoformat(),
             'special_requests': 'Near the window'
         }
@@ -42,7 +44,7 @@ class ReservationTests(APITestCase):
 
     def test_reservation_list_today(self):
         Reservation.objects.create(
-            restaurant=self.restaurant, user=self.user, table_id=1,
+            restaurant=self.restaurant, user=self.user, table_id=self.table_id_1,
             date=timezone.now(), special_requests='Today test'
         )
         url = reverse('reservation-list-today')
@@ -52,7 +54,7 @@ class ReservationTests(APITestCase):
 
     def test_reservation_update_status(self):
         res = Reservation.objects.create(
-            restaurant=self.restaurant, user=self.user, table_id=1, date=timezone.now()
+            restaurant=self.restaurant, user=self.user, table_id=self.table_id_1, date=timezone.now()
         )
         url = reverse('reservation-update-status', kwargs={'pk': res.pk})
         # Testing PUT as PATCH was removed
@@ -63,7 +65,7 @@ class ReservationTests(APITestCase):
 
     def test_reservation_delete(self):
         res = Reservation.objects.create(
-            restaurant=self.restaurant, user=self.user, table_id=1, date=timezone.now()
+            restaurant=self.restaurant, user=self.user, table_id=self.table_id_1, date=timezone.now()
         )
         url = reverse('reservation-delete', kwargs={'pk': res.pk})
         response = self.client.delete(url)
@@ -75,15 +77,15 @@ class ReservationTests(APITestCase):
         Reservation.objects.create(
             restaurant=self.restaurant,
             user=self.user,
-            table_id=2,
+            table_id=self.table_id_2,
             date=timezone.now()
         )
         url = reverse('reservation-by-table')
         response = self.client.get(url, {
             'restaurant_id': self.restaurant.id,
-            'table_id': 2, 
+            'table_id': self.table_id_2,
             'date': date.isoformat()
         })
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['table_id'], 2)
+        self.assertEqual(response.data[0]['table_id'], self.table_id_2)
