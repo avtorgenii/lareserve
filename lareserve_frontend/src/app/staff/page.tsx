@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { AuthGuard } from '@/features/auth/ui/AuthGuard';
 import { GoogleSignInButton } from '@/features/auth/ui/GoogleSignInButton';
 import StaffViewPage from '@/features/staffView/ui/StaffViewPage';
 import AppLayout from '@/shared/ui/AppLayout';
@@ -13,21 +14,23 @@ export default function StaffPage() {
   });
 
   return (
-    <AppLayout
-      rightSlot={
-        <div className="flex items-center gap-4">
-          <span>{today}</span>
-          <Link
-            href="/editor"
-            className="rounded-lg border border-border bg-white px-4 py-1.5 text-sm font-medium text-text hover:bg-surface-subtle"
-          >
-            Edytuj plan
-          </Link>
-          <GoogleSignInButton />
-        </div>
-      }
-    >
-      <StaffViewPage />
-    </AppLayout>
+    <AuthGuard>
+      <AppLayout
+        rightSlot={
+          <div className="flex items-center gap-4">
+            <span>{today}</span>
+            <Link
+              href="/editor"
+              className="rounded-lg border border-border bg-white px-4 py-1.5 text-sm font-medium text-text hover:bg-surface-subtle"
+            >
+              Edytuj plan
+            </Link>
+            <GoogleSignInButton />
+          </div>
+        }
+      >
+        <StaffViewPage />
+      </AppLayout>
+    </AuthGuard>
   );
 }
