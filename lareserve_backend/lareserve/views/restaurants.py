@@ -5,11 +5,17 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serializer
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 from ..models import Restaurant, Reservation
-from ..serializers.restaurants import RestaurantSerializer
+from ..serializers.restaurants import (
+    RestaurantSerializer,
+    RestaurantLayoutUpdateSerializer,
+    AvailableDatesResponseSerializer,
+    AvailableTablesResponseSerializer,
+    AvailableTimesResponseSerializer
+)
 
 AVAILABLE_TIMES = [
     '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
@@ -80,17 +86,7 @@ def restaurant_delete(request, pk):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@extend_schema(responses={200: inline_serializer(
-    name='RestaurantLayoutUpdateSerializer',
-    fields={
-        'floors': serializers.DictField(
-            child=serializers.DictField(
-                child=serializers.JSONField(),
-                help_text="Floor element data (id, type, x, y, label, etc.)"
-            )
-        )
-    }
-)})
+@extend_schema(responses={200: OpenApiTypes.OBJECT})
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def restaurant_get_layout(request, pk):
@@ -106,17 +102,7 @@ def restaurant_get_layout(request, pk):
 
 
 @extend_schema(
-    request=inline_serializer(
-        name='RestaurantLayoutUpdateSerializer',
-        fields={
-            'floors': serializers.DictField(
-                child=serializers.DictField(
-                    child=serializers.JSONField(),
-                    help_text="Floor element data (id, type, x, y, label, etc.)"
-                )
-            )
-        }
-    ),
+    request=RestaurantLayoutUpdateSerializer,
     responses={200: OpenApiTypes.OBJECT}
 )
 @api_view(['PUT'])
@@ -140,7 +126,7 @@ def restaurant_update_layout(request, pk):
 
 @extend_schema(
     responses={
-        200: serializers.ListField(child=serializers.DateField())
+        200: AvailableDatesResponseSerializer
     }
 )
 @api_view(['GET'])
@@ -148,7 +134,6 @@ def restaurant_update_layout(request, pk):
 def restaurant_available_dates(request, pk):
     """
     Get available dates for reservations (next 14 days).
-    Returns a simple list of ISO date strings.
     """
     try:
         Restaurant.objects.get(pk=pk)
@@ -157,7 +142,75 @@ def restaurant_available_dates(request, pk):
 
     today = timezone.localdate()
     dates = [(today + timedelta(days=i)).isoformat() for i in range(14)]
-    return Response(dates)
+    return Response({"available_dates": dates})
+
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter(name="date", type=OpenApiTypes.DATE, location=OpenApiParameter.QUERY, required=True),
+        OpenApiParameter(name="time", type=OpenApiTypes.STR, location=OpenApiParameter.QUERY, required=True, description="Format HH:MM"),
+    ],
+    responses={
+        200: AvailableTablesResponseSerializer
+    }
+)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def restaurant_available_tables(request, pk):
+    """
+    Get availability status for ALL tables at a specific date and time.
+    Returns: {"tables": {"table_id": true/false, ...}}
+    """
+    try:
+        restaurant = Restaurant.objects.get(pk=pk)
+    except Restaurant.DoesNotExist:
+        return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    date_str = request.query_params.get('date')
+    time_str = request.query_params.get('time')
+
+    if not date_str or not time_str:
+        return Response({"error": "date and time parameters are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        target_datetime = timezone.make_aware(datetime.combine(
+            datetime.strptime(date_str, '%Y-%m-%d').date(),
+            datetime.strptime(time_str, '%H:%M').time()
+        ))
+    except ValueError:
+        return Response({"error": "Invalid date or time format. Use YYYY-MM-DD and HH:MM"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Past date guard
+    if target_datetime < timezone.now():
+        # Everything is unavailable in the past
+        layout = restaurant.layout or {}
+        floors = layout.get('floors', {})
+        results = {
+            elem.get('id'): False for elem in floors.values()
+            if 'table' in elem.get('type', '').lower()
+        }
+        return Response({"tables": results})
+
+    layout = restaurant.layout or {}
+    floors = layout.get('floors', {})
+    table_ids = [
+        elem.get('id') for elem in floors.values()
+        if 'table' in elem.get('type', '').lower()
+    ]
+
+    from ..serializers.reservations import RESERVATION_BUFFER_HOURS
+    buffer = timedelta(hours=RESERVATION_BUFFER_HOURS)
+
+    # Get all reserved table IDs for this time slot
+    reserved_table_ids = Reservation.objects.filter(
+        restaurant=restaurant,
+        table_id__in=table_ids,
+        status=Reservation.Status.CONFIRMED,
+        date__range=(target_datetime - buffer + timedelta(seconds=1), target_datetime + buffer - timedelta(seconds=1))
+    ).values_list('table_id', flat=True).distinct()
+
+    results = {tid: (tid not in reserved_table_ids) for tid in table_ids}
+    return Response({"tables": results})
 
 
 @extend_schema(
@@ -165,15 +218,7 @@ def restaurant_available_dates(request, pk):
         OpenApiParameter(name="date", type=OpenApiTypes.DATE, location=OpenApiParameter.QUERY, required=True),
     ],
     responses={
-        200: inline_serializer(
-            name='AvailableTimesResponse',
-            fields={
-                'time_slot': serializers.DictField(
-                    child=serializers.BooleanField(),
-                    help_text="Key is time (e.g. '11:00'), value is availability (true/false)"
-                )
-            }
-        )
+        200: AvailableTimesResponseSerializer
     }
 )
 @api_view(['GET'])
@@ -181,7 +226,7 @@ def restaurant_available_dates(request, pk):
 def restaurant_available_times(request, pk):
     """
     Get available times for a specific date with their availability status.
-    Format: {"11:00": True, "12:00": False, ...}
+    Format: {"time_slots": {"11:00": True, "12:00": False, ...}}
     """
     try:
         restaurant = Restaurant.objects.get(pk=pk)
@@ -205,7 +250,7 @@ def restaurant_available_times(request, pk):
     ]
 
     if not table_ids:
-        return Response({time: False for time in AVAILABLE_TIMES})
+        return Response({"time_slots": {time: False for time in AVAILABLE_TIMES}})
 
     # Availability logic:
     # For each time slot, check if ANY table is available.
@@ -227,4 +272,4 @@ def restaurant_available_times(request, pk):
 
         results[time_str] = conflicts_count < len(table_ids)
 
-    return Response(results)
+    return Response({"time_slots": results})

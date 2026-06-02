@@ -124,8 +124,13 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
 }
 
+# Auth & Registration settings
+REST_AUTH = {
+    'USER_DETAILS_SERIALIZER': 'lareserve.serializers.users.CustomUserDetailsSerializer',
+}
+
 # Turn off password requirement
-ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 
 # '*' means that field is required
 ACCOUNT_SIGNUP_FIELDS = ['email*']

@@ -14,6 +14,7 @@ urlpatterns = [
     
     path('restaurants/<int:pk>/available-dates/', views.restaurant_available_dates, name='restaurant-available-dates'),
     path('restaurants/<int:pk>/available-times/', views.restaurant_available_times, name='restaurant-available-times'),
+    path('restaurants/<int:pk>/available-tables/', views.restaurant_available_tables, name='restaurant-available-tables'),
 
     # Reservations
     path('reservations/', views.reservation_create, name='reservation-create'),

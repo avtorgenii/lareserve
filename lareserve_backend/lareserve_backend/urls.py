@@ -26,8 +26,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Auth and authorization
-    path('accounts/', include('allauth.urls')),  # SSO test pages, http://127.0.0.1:8000/accounts/google/login/
+    path('api/v1/auth/', include('dj_rest_auth.urls')),
+    path('api/v1/auth/registration/', include('dj_rest_auth.registration.urls')),
     path('api/v1/auth/google/', GoogleLogin.as_view(), name='google_login'),
+    path('accounts/', include('allauth.urls')),
 
     path('api/v1/', include('lareserve.urls')),
 

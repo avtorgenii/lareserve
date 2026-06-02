@@ -1,25 +1,30 @@
 from django.utils import timezone
 from rest_framework import status, serializers
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serializer
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 from ..models import Reservation
-from ..serializers.reservations import ReservationSerializer, ReservationSummarySerializer
+from ..serializers.reservations import (
+    ReservationSerializer, 
+    ReservationSummarySerializer,
+    ReservationStatusUpdateSerializer
+)
 
 
 @extend_schema(request=ReservationSerializer, responses={201: ReservationSerializer})
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def reservation_create(request):
     """
-    Create a new reservation.
+    Create a new reservation. Authentication optional.
     """
     serializer = ReservationSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(user=request.user)
+        user = request.user if request.user.is_authenticated else None
+        serializer.save(user=user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -125,12 +130,7 @@ def reservation_by_table(request):
     return Response(serializer.data)
 
 @extend_schema(
-    request=inline_serializer(
-        name='ReservationStatusUpdateSerializer',
-        fields={
-            'status': serializers.ChoiceField(choices=Reservation.Status.choices)
-        }
-    ),
+    request=ReservationStatusUpdateSerializer,
     responses={200: ReservationSerializer}
 )
 @api_view(['PUT'])

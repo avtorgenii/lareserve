@@ -63,8 +63,8 @@ class RestaurantTests(APITestCase):
         url = reverse('restaurant-available-dates', kwargs={'pk': res.pk})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # It's now a simple list, not a dict with 'available_dates' key
-        self.assertEqual(len(response.data), 14)
+        # It's now wrapped in 'available_dates'
+        self.assertEqual(len(response.data['available_dates']), 14)
 
     def test_available_times(self):
         res = Restaurant.objects.create(name='A', country='C', city='C', building_number='1', layout=self.valid_layout)
@@ -72,4 +72,16 @@ class RestaurantTests(APITestCase):
         date_str = timezone.localdate().isoformat()
         response = self.client.get(url, {'date': date_str})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('11:00', response.data)
+        # It's now wrapped in 'time_slots'
+        self.assertIn('11:00', response.data['time_slots'])
+
+    def test_available_tables(self):
+        res = Restaurant.objects.create(name='A', country='C', city='C', building_number='1', layout=self.valid_layout)
+        url = reverse('restaurant-available-tables', kwargs={'pk': res.pk})
+        date_str = (timezone.localdate() + timedelta(days=1)).isoformat()
+        time_str = "12:00"
+        response = self.client.get(url, {'date': date_str, 'time': time_str})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # IDs are 1 and 2 in valid_layout, let's try integer keys
+        self.assertTrue(response.data['tables'][1])
+        self.assertTrue(response.data['tables'][2])

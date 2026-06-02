@@ -36,7 +36,7 @@ class Restaurant(models.Model):
         }
     }
     """
-    layout = models.JSONField(default=dict, help_text="Layout elements", null=True)
+    layout = models.JSONField(default=dict, help_text="Layout elements", null=False)
 
     def __str__(self):
         return self.name
@@ -58,6 +58,12 @@ class Reservation(models.Model):
     special_requests = models.TextField(blank=True, null=True)
 
     table_id = models.CharField(max_length=255, null=False, blank=False)
+
+    # Guest info (for unauthenticated reservations)
+    guest_name = models.CharField(max_length=255, blank=True, null=True)
+    guest_email = models.EmailField(blank=True, null=True)
+    guest_phone = models.CharField(max_length=20, blank=True, null=True)
+
     date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -69,8 +75,11 @@ class Reservation(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='reservations'
+        related_name='reservations',
+        null=True,
+        blank=True
     )
 
     def __str__(self):
-        return f"Reservation #{self.id} - {self.user.email}"
+        identifier = self.user.email if self.user else self.guest_name
+        return f"Reservation #{self.id} - {identifier}"

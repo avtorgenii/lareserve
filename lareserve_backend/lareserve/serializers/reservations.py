@@ -1,31 +1,62 @@
 from datetime import timedelta
 from rest_framework import serializers
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 from ..models import Reservation, Restaurant
 
 # Default buffer time between reservations at the same table
 RESERVATION_BUFFER_HOURS = 2
 
 class ReservationSummarySerializer(serializers.ModelSerializer):
-    guest_name = serializers.CharField(source='user.get_full_name', read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
-    phone = serializers.CharField(source='user.phone', read_only=True)
+    guest_name = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    phone = serializers.SerializerMethodField()
 
     class Meta:
         model = Reservation
         fields = ['id', 'date', 'table_id', 'status', 'guest_name', 'email', 'phone', 'special_requests']
 
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_guest_name(self, obj):
+        if obj.user:
+            return obj.user.get_full_name() or obj.user.username
+        return obj.guest_name
+
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_email(self, obj):
+        if obj.user:
+            return obj.user.email
+        return obj.guest_email
+
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_phone(self, obj):
+        if obj.user:
+            return obj.user.phone
+        return obj.guest_phone
+
+
+class ReservationStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=Reservation.Status.choices)
+
 
 class ReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
-        fields = '__all__'
+        fields = [
+            'id', 'restaurant', 'table_id', 'date', 'special_requests',
+            'guest_name', 'guest_email', 'guest_phone', 'status', 'user', 'created_at'
+        ]
         read_only_fields = ['user', 'status', 'created_at']
 
     def validate(self, data):
         restaurant = data.get('restaurant')
         table_id = data.get('table_id')
         reservation_date = data.get('date')
+
+        # 0. Check if date is in the past
+        if reservation_date < timezone.now():
+            raise serializers.ValidationError({"date": "Cannot book in the past."})
 
         # 1. Check if table_id exists in restaurant layout and is a table
         layout = restaurant.layout
@@ -35,7 +66,7 @@ class ReservationSerializer(serializers.ModelSerializer):
         floors = layout['floors']
         table_element = None
         for element in floors.values():
-            if element.get('id') == table_id:
+            if str(element.get('id')) == str(table_id):
                 table_element = element
                 break
         
@@ -48,8 +79,9 @@ class ReservationSerializer(serializers.ModelSerializer):
         # 2. Check for time conflicts
         # A conflict exists if another reservation for the same table is within X hours
         buffer = timedelta(hours=RESERVATION_BUFFER_HOURS)
-        start_range = reservation_date - buffer
-        end_range = reservation_date + buffer
+        # Use exclusive range to allow back-to-back reservations if they don't overlap
+        start_range = reservation_date - buffer + timedelta(seconds=1)
+        end_range = reservation_date + buffer - timedelta(seconds=1)
 
         conflicting_reservations = Reservation.objects.filter(
             restaurant=restaurant,

@@ -50,3 +50,30 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
         return value
 
+
+class RestaurantLayoutUpdateSerializer(serializers.Serializer):
+    floors = serializers.DictField(
+        child=serializers.DictField(
+            child=serializers.JSONField(),
+            help_text="Floor element data (id, type, x, y, label, etc.)"
+        )
+    )
+
+
+class AvailableDatesResponseSerializer(serializers.Serializer):
+    available_dates = serializers.ListField(child=serializers.DateField())
+
+
+class AvailableTablesResponseSerializer(serializers.Serializer):
+    tables = serializers.DictField(
+        child=serializers.BooleanField(),
+        help_text="Key is table ID, value is availability (true/false)"
+    )
+
+
+class AvailableTimesResponseSerializer(serializers.Serializer):
+    time_slots = serializers.DictField(
+        child=serializers.BooleanField(),
+        help_text="Key is time (e.g. '11:00'), value is availability (true/false)"
+    )
+

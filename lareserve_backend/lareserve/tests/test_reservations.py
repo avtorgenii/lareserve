@@ -63,9 +63,39 @@ class ReservationTests(APITestCase):
         res.refresh_from_db()
         self.assertEqual(res.status, 'FINISHED')
 
+    def test_reservation_create_guest(self):
+        # Unauthenticate
+        self.client.force_authenticate(user=None)
+        url = reverse('reservation-create')
+        date = timezone.now() + timedelta(days=1)
+        data = {
+            'restaurant': self.restaurant.id,
+            'table_id': 1,
+            'date': date.isoformat(),
+            'guest_name': 'Guest User',
+            'guest_email': 'guest@example.com'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['guest_name'], 'Guest User')
+        self.assertIsNone(response.data['user'])
+
+    def test_reservation_past_date_fails(self):
+        url = reverse('reservation-create')
+        past_date = timezone.now() - timedelta(hours=1)
+        data = {
+            'restaurant': self.restaurant.id,
+            'table_id': 1,
+            'date': past_date.isoformat(),
+            'guest_name': 'Past Guest'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('date', response.data)
+
     def test_reservation_delete(self):
         res = Reservation.objects.create(
-            restaurant=self.restaurant, user=self.user, table_id=self.table_id_1, date=timezone.now()
+            restaurant=self.restaurant, user=self.user, table_id=1, date=timezone.now() + timedelta(days=1)
         )
         url = reverse('reservation-delete', kwargs={'pk': res.pk})
         response = self.client.delete(url)
