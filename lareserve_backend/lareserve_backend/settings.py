@@ -13,18 +13,6 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
-import warnings
-
-warnings.filterwarnings(
-    "ignore",
-    message=r".*app_settings\.USERNAME_REQUIRED is deprecated.*"
-)
-
-warnings.filterwarnings(
-    "ignore",
-    message=r".*app_settings\.EMAIL_REQUIRED is deprecated.*"
-)
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "1").lower() in ("1", "true", "yes")
 
@@ -65,7 +53,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.sites',  # Must-have for all-auth
 
     # Third party
     'rest_framework',
@@ -75,35 +62,11 @@ INSTALLED_APPS = [
     'django_extensions',
 
     # Auth & Registration
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',  # Needed for registration even without SSO
-    'allauth.socialaccount.providers.google',
     'dj_rest_auth',
-    'dj_rest_auth.registration',
 
     # My own apps
     'lareserve',
 ]
-
-SITE_ID = 2
-
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-]
-
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        }
-    }
-}
 
 # Where to redirect user after sign in/out
 # TODO: update these
@@ -129,12 +92,6 @@ REST_AUTH = {
     'USER_DETAILS_SERIALIZER': 'lareserve.serializers.users.CustomUserDetailsSerializer',
 }
 
-# Turn off password requirement
-ACCOUNT_LOGIN_METHODS = {'email', 'username'}
-
-# '*' means that field is required
-ACCOUNT_SIGNUP_FIELDS = ['email*']
-
 SPECTACULAR_SETTINGS = {
     'TITLE': 'lareserve_backend',
     'DESCRIPTION': 'La Reserve',
@@ -151,8 +108,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware'
 ]
+
 
 # Trust the headers set by Nginx, required for work with SSL
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

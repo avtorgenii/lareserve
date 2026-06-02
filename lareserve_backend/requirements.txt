@@ -3,7 +3,6 @@
 asgiref==3.11.1
     # via
     #   django
-    #   django-allauth
     #   django-cors-headers
 attrs==26.1.0
     # via
@@ -23,12 +22,10 @@ django==6.0.5
     # via
     #   lareserve (pyproject.toml)
     #   dj-rest-auth
-    #   django-allauth
     #   django-cors-headers
     #   django-extensions
     #   djangorestframework
     #   drf-spectacular
-django-allauth==65.16.1
     # via lareserve (pyproject.toml)
 django-cors-headers==4.9.0
     # via lareserve (pyproject.toml)

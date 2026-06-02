@@ -70,7 +70,7 @@ class ReservationTests(APITestCase):
         date = timezone.now() + timedelta(days=1)
         data = {
             'restaurant': self.restaurant.id,
-            'table_id': 1,
+            'table_id': self.table_id_1,
             'date': date.isoformat(),
             'guest_name': 'Guest User',
             'guest_email': 'guest@example.com'
@@ -85,7 +85,7 @@ class ReservationTests(APITestCase):
         past_date = timezone.now() - timedelta(hours=1)
         data = {
             'restaurant': self.restaurant.id,
-            'table_id': 1,
+            'table_id': self.table_id_1,
             'date': past_date.isoformat(),
             'guest_name': 'Past Guest'
         }
@@ -95,7 +95,7 @@ class ReservationTests(APITestCase):
 
     def test_reservation_delete(self):
         res = Reservation.objects.create(
-            restaurant=self.restaurant, user=self.user, table_id=1, date=timezone.now() + timedelta(days=1)
+            restaurant=self.restaurant, user=self.user, table_id=self.table_id_1, date=timezone.now() + timedelta(days=1)
         )
         url = reverse('reservation-delete', kwargs={'pk': res.pk})
         response = self.client.delete(url)

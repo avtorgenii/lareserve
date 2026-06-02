@@ -37,33 +37,6 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-## SSO
-
-Run `uv sync` and apply migrations before continuing
-
-1. Table `django_site`
-
-```
-id	domain	        name
-2	127.0.0.1:8000	La Reserve
-```
-
-2. Table `socialaccount_socialapp`
-
-`client_id` and `client_secret` are from `.json` in discord
-
-```
-id	provider   name	        client_id	            secret
-1	google	   Google SSO	<client_id>         	<client_secret>
-```
-
-3. Table `socialaccount_socialapp_sites`
-
-```
-id	socialapp_id	site_id
-1	1	            2
-```
-
 # Run
 
 ```

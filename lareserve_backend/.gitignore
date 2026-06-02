@@ -14,4 +14,3 @@ wheels/
 .env
 media/
 logs/
-client_secret_google_sso.json
