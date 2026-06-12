@@ -40,6 +40,8 @@ export default function DateTimePicker({
   onTimeChange,
   onConfirm,
 }: DateTimePickerProps) {
+  const safeDates = Array.isArray(dates) ? dates : [];
+
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-surface-subtle px-4 py-12">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
@@ -51,7 +53,7 @@ export default function DateTimePicker({
             <p className="text-sm text-text-muted">Ładowanie...</p>
           ) : (
             <div className="flex flex-col gap-2">
-              {dates.map((d) => (
+              {safeDates.map((d) => (
                 <button
                   type="button"
                   key={d}
