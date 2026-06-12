@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+import { tokenStorage } from '@/features/auth/model/tokenStorage';
+
 export const apiClient = axios.create({
   baseURL: 'http://localhost:8000/api/v1',
   headers: {
@@ -8,7 +10,7 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  const token = tokenStorage.get();
   if (token) {
     config.headers['Authorization'] = `Token ${token}`;
   }
@@ -29,6 +31,9 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    if (error.response?.status === 401) {
+      tokenStorage.clear();
+    }
     console.error('[API] Error:', {
       message: error.message,
       code: error.code,

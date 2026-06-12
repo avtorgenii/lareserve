@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { AuthGuard } from '@/features/auth/ui/AuthGuard';
-import { GoogleSignInButton } from '@/features/auth/ui/GoogleSignInButton';
+import { AuthActionButton } from '@/features/auth/ui/GoogleSignInButton';
 import StaffViewPage from '@/features/staffView/ui/StaffViewPage';
 import AppLayout from '@/shared/ui/AppLayout';
 
@@ -25,7 +25,7 @@ export default function StaffPage() {
             >
               Edytuj plan
             </Link>
-            <GoogleSignInButton />
+            <AuthActionButton />
           </div>
         }
       >

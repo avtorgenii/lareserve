@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { tokenStorage } from '../model/tokenStorage';
-import { GoogleSignInButton } from './GoogleSignInButton';
+import { AuthActionButton } from './GoogleSignInButton';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
@@ -25,7 +25,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
             <h1 className="text-lg font-semibold text-text">Restauracja</h1>
             <p className="mt-1 text-sm text-text-muted">Zaloguj się, aby kontynuować</p>
           </div>
-          <GoogleSignInButton />
+          <AuthActionButton />
         </div>
       </div>
     );
