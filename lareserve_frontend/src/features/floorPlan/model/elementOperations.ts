@@ -178,6 +178,24 @@ export function nextIndexByType(state: FloorPlanState, type: FloorElementType): 
   return floor.elements.filter((e) => e.type === type).length + 1;
 }
 
+/**
+ * Returns a stable floor suffix for element labels:
+ * - G: ground floor (id "1")
+ * - P{n}: above ground (id "2" => P1)
+ * - B{n}: below ground (id "0" => B1, id "-1" => B2)
+ */
+export function floorLabelSuffix(floorId: string): string {
+  const n = parseInt(floorId, 10);
+  if (isNaN(n)) return floorId;
+  if (n === 1) return 'G';
+  if (n > 1) return `P${n - 1}`;
+  return `B${1 - n}`;
+}
+
+export function buildElementLabel(type: FloorElementType, index: number, floorId: string): string {
+  return `${LABEL_PREFIX[type]}${index}-${floorLabelSuffix(floorId)}`;
+}
+
 export function touchUpdatedAt(state: FloorPlanState) {
   const floor = getActiveFloor(state);
   if (floor) floor.updatedAt = new Date().toISOString();
@@ -194,7 +212,7 @@ export function addElement<T extends FloorElementType>(
   pushHistory(state);
   const id = generateId(type);
   const index = nextIndexByType(state, type);
-  const label = payload.label ?? `${LABEL_PREFIX[type]}${index}`;
+  const label = payload.label ?? buildElementLabel(type, index, floor.id);
   const element = ELEMENT_BUILDERS[type](id, label, payload);
   floor.elements.push(element);
   state.selectedElementId = id;

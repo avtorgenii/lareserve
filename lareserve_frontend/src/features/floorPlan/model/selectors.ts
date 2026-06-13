@@ -99,6 +99,22 @@ export const selectCanRedo = createSelector(
   (floorPlan) => floorPlan.history.future.length > 0
 );
 
+const selectNumericFloorIds = createSelector([selectFloorsList], (floors) =>
+  floors.map((floor) => parseInt(floor.id, 10)).filter((id) => !isNaN(id))
+);
+
+export const selectCanDeleteFloor = createSelector([selectNumericFloorIds], (floorIds) =>
+  floorIds.some((id) => id !== 1)
+);
+
+export const selectCanDeleteAboveGroundFloor = createSelector([selectNumericFloorIds], (floorIds) =>
+  floorIds.some((id) => id > 1)
+);
+
+export const selectCanDeleteBelowGroundFloor = createSelector([selectNumericFloorIds], (floorIds) =>
+  floorIds.some((id) => id < 1)
+);
+
 // ---------------------------------------------------------------------------
 // Element helpers (active floor)
 // ---------------------------------------------------------------------------

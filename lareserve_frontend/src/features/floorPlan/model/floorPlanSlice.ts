@@ -2,15 +2,15 @@ import { createSlice } from '@reduxjs/toolkit';
 
 import {
   addElement,
+  buildElementLabel,
   generateId,
-  LABEL_PREFIX,
   nextIndexByType,
   resizeElement,
   toRuntimeState,
   touchUpdatedAt,
 } from './elementOperations';
 import { pushHistory, snapshotFloorPlan, restoreFromSnapshot } from './history';
-import { createInitialFloorPlanState, floorLabel } from './types';
+import { createInitialFloorPlanState, floorLabel, GROUND_FLOOR_ID } from './types';
 import { clampViewportScale, VIEWPORT_SCALE_FACTOR } from './viewport';
 
 import type {
@@ -35,6 +35,13 @@ import type { FloorElement, FloorPlanPersistedState, FloorPlanState } from './ty
 import type { PayloadAction } from '@reduxjs/toolkit';
 
 const initialState: FloorPlanState = createInitialFloorPlanState();
+const GROUND_FLOOR_NUM = parseInt(GROUND_FLOOR_ID, 10);
+
+function getNumericFloorIds(state: FloorPlanState): number[] {
+  return Object.keys(state.floors)
+    .map((id) => parseInt(id, 10))
+    .filter((n) => !isNaN(n));
+}
 
 const floorPlanSlice = createSlice({
   name: 'floorPlan',
@@ -53,10 +60,10 @@ const floorPlanSlice = createSlice({
     },
 
     createFloor: (state) => {
-      const existingIds = Object.keys(state.floors)
-        .map((id) => parseInt(id, 10))
-        .filter((n) => !isNaN(n));
-      const nextId = String(existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1);
+      const existingIds = getNumericFloorIds(state);
+      const nextId = String(
+        existingIds.length > 0 ? Math.max(...existingIds) + 1 : GROUND_FLOOR_NUM + 1
+      );
       state.floors[nextId] = {
         id: nextId,
         name: floorLabel(nextId),
@@ -65,6 +72,69 @@ const floorPlanSlice = createSlice({
       };
       state.activeFloorId = nextId;
       state.selectedElementId = null;
+    },
+
+    createBelowGroundFloor: (state) => {
+      const existingIds = getNumericFloorIds(state);
+      const nextId = String(
+        existingIds.length > 0 ? Math.min(...existingIds) - 1 : GROUND_FLOOR_NUM - 1
+      );
+      state.floors[nextId] = {
+        id: nextId,
+        name: floorLabel(nextId),
+        elements: [],
+        updatedAt: new Date().toISOString(),
+      };
+      state.activeFloorId = nextId;
+      state.selectedElementId = null;
+    },
+
+    deleteRightmostFloor: (state) => {
+      const floorIds = getNumericFloorIds(state);
+
+      if (floorIds.length <= 1) return;
+
+      const aboveGroundIds = floorIds.filter((id) => id > GROUND_FLOOR_NUM);
+      if (aboveGroundIds.length === 0) return;
+
+      const rightmostId = String(Math.max(...aboveGroundIds));
+      if (!state.floors[rightmostId]) return;
+
+      pushHistory(state);
+      delete state.floors[rightmostId];
+      state.selectedElementId = null;
+
+      if (state.activeFloorId === rightmostId) {
+        const remainingIds = getNumericFloorIds(state);
+
+        if (remainingIds.length > 0) {
+          state.activeFloorId = String(Math.max(...remainingIds));
+        }
+      }
+    },
+
+    deleteLeftmostFloor: (state) => {
+      const floorIds = getNumericFloorIds(state);
+
+      if (floorIds.length <= 1) return;
+
+      const belowGroundIds = floorIds.filter((id) => id < GROUND_FLOOR_NUM);
+      if (belowGroundIds.length === 0) return;
+
+      const leftmostId = String(Math.min(...belowGroundIds));
+      if (!state.floors[leftmostId]) return;
+
+      pushHistory(state);
+      delete state.floors[leftmostId];
+      state.selectedElementId = null;
+
+      if (state.activeFloorId === leftmostId) {
+        const remainingIds = getNumericFloorIds(state);
+
+        if (remainingIds.length > 0) {
+          state.activeFloorId = String(Math.min(...remainingIds));
+        }
+      }
     },
 
     selectElement: (state, action: PayloadAction<string | null>) => {
@@ -114,7 +184,7 @@ const floorPlanSlice = createSlice({
         copy = {
           ...source,
           id,
-          label: `${LABEL_PREFIX[source.type]}${index}`,
+          label: buildElementLabel(source.type, index, floor.id),
           x: source.x + 30,
           y: source.y + 30,
           x2: source.x2 + 30,
@@ -124,7 +194,7 @@ const floorPlanSlice = createSlice({
         copy = {
           ...source,
           id,
-          label: `${LABEL_PREFIX[source.type]}${index}`,
+          label: buildElementLabel(source.type, index, floor.id),
           x: source.x + 30,
           y: source.y + 30,
         };
@@ -277,6 +347,9 @@ export const {
   resetFloorPlan,
   setActiveFloor,
   createFloor,
+  createBelowGroundFloor,
+  deleteRightmostFloor,
+  deleteLeftmostFloor,
   selectElement,
   clearSelection,
   addRoundTable,

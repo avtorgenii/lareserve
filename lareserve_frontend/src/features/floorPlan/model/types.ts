@@ -100,28 +100,30 @@ export type FloorPlanState = FloorPlanPersistedState & {
 
 export const FLOOR_PLAN_STORAGE_KEY = 'restaurant-floor-plan-v1';
 export const DEFAULT_VIEWPORT_SCALE = 1;
+export const GROUND_FLOOR_ID = '1';
 
 /**
  * Generates a display label for a floor from its numeric string id.
- * "1" → "Parter", "2" → "Piętro 1", "3" → "Piętro 2", etc.
+ * "1" → "Parter", "2" → "Piętro 1", "0" → "Poziom -1", "-1" → "Poziom -2", etc.
  */
 export function floorLabel(id: string): string {
   const n = parseInt(id, 10);
-  if (isNaN(n) || n < 1) return id;
+  if (isNaN(n)) return id;
   if (n === 1) return 'Parter';
+  if (n < 1) return `Poziom -${1 - n}`;
   return `Piętro ${n - 1}`;
 }
 
 export const createInitialFloorPlanState = (): FloorPlanState => ({
   floors: {
-    '1': {
-      id: '1',
+    [GROUND_FLOOR_ID]: {
+      id: GROUND_FLOOR_ID,
       name: 'Parter',
       elements: [],
       updatedAt: new Date().toISOString(),
     },
   },
-  activeFloorId: '1',
+  activeFloorId: GROUND_FLOOR_ID,
   selectedElementId: null,
   viewportScale: DEFAULT_VIEWPORT_SCALE,
   viewportPan: { x: 0, y: 0 },

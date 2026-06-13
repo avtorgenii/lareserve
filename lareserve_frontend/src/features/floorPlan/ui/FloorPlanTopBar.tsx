@@ -3,7 +3,10 @@
 import Link from 'next/link';
 
 import {
+  createBelowGroundFloor,
   createFloor,
+  deleteLeftmostFloor,
+  deleteRightmostFloor,
   redoFloorPlan,
   saveFloorPlanRequested,
   setActiveFloor,
@@ -11,6 +14,8 @@ import {
 } from '../model/floorPlanSlice';
 import {
   selectActiveFloorId,
+  selectCanDeleteAboveGroundFloor,
+  selectCanDeleteBelowGroundFloor,
   selectCanRedo,
   selectCanUndo,
   selectFloorsList,
@@ -24,6 +29,8 @@ export default function FloorPlanTopBar() {
   const dispatch = useAppDispatch();
   const canUndo = useAppSelector(selectCanUndo);
   const canRedo = useAppSelector(selectCanRedo);
+  const canDeleteBelowGroundFloor = useAppSelector(selectCanDeleteBelowGroundFloor);
+  const canDeleteAboveGroundFloor = useAppSelector(selectCanDeleteAboveGroundFloor);
   const floors = useAppSelector(selectFloorsList);
   const activeFloorId = useAppSelector(selectActiveFloorId);
 
@@ -38,6 +45,26 @@ export default function FloorPlanTopBar() {
       </div>
 
       <div className="flex items-center gap-2">
+        <IconButton
+          size="md"
+          aria-label="Dodaj poziom podziemny"
+          title="Dodaj poziom podziemny"
+          className="text-base leading-none"
+          onClick={() => dispatch(createBelowGroundFloor())}
+        >
+          +
+        </IconButton>
+        {canDeleteBelowGroundFloor ? (
+          <IconButton
+            size="md"
+            aria-label="Usuń najniższy poziom podziemny"
+            title="Usuń najniższy poziom podziemny"
+            className="text-base leading-none"
+            onClick={() => dispatch(deleteLeftmostFloor())}
+          >
+            -
+          </IconButton>
+        ) : null}
         <FloorSelector
           floors={floors.map((f) => ({ id: f.id, label: f.name }))}
           activeFloorId={activeFloorId}
@@ -46,12 +73,24 @@ export default function FloorPlanTopBar() {
         />
         <IconButton
           size="md"
-          aria-label="Dodaj piętro"
+          aria-label="Dodaj poziom nadziemny"
+          title="Dodaj poziom nadziemny"
           className="text-base leading-none"
           onClick={() => dispatch(createFloor())}
         >
           +
         </IconButton>
+        {canDeleteAboveGroundFloor ? (
+          <IconButton
+            size="md"
+            aria-label="Usuń najwyższy poziom nadziemny"
+            title="Usuń najwyższy poziom nadziemny"
+            className="text-base leading-none"
+            onClick={() => dispatch(deleteRightmostFloor())}
+          >
+            -
+          </IconButton>
+        ) : null}
       </div>
 
       <div className="flex items-center gap-2">
