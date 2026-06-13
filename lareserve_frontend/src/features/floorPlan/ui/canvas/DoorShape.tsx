@@ -1,6 +1,7 @@
 import { Arc, Group, Line } from 'react-konva';
 
 import { setCursor } from '../../lib/setCursor';
+import { snapToGrid } from '../../lib/snapToGrid';
 
 import type { CanvasMode, DoorElement } from '../../model/types';
 
@@ -41,6 +42,12 @@ export default function DoorShape({
 
   const strokeColor = selected ? colors.selectedStroke : colors.stroke;
 
+  const handleGroupDragMove = (x: number, y: number) => {
+    const snappedX = snapToGrid(x);
+    const snappedY = snapToGrid(y);
+    return { snappedX, snappedY };
+  };
+
   return (
     <Group
       draggable={isEditing}
@@ -58,10 +65,22 @@ export default function DoorShape({
             }
           : undefined
       }
+      onDragMove={
+        isEditing
+          ? (e) => {
+              const { snappedX, snappedY } = handleGroupDragMove(e.target.x(), e.target.y());
+              e.target.x(snappedX);
+              e.target.y(snappedY);
+            }
+          : undefined
+      }
       onDragEnd={
         isEditing
           ? (e) => {
-              onDragEnd(e.target.x(), e.target.y());
+              const { snappedX, snappedY } = handleGroupDragMove(e.target.x(), e.target.y());
+              e.target.x(snappedX);
+              e.target.y(snappedY);
+              onDragEnd(snappedX, snappedY);
               setCursor(e, 'grab');
             }
           : undefined

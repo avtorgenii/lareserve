@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Group, Line } from 'react-konva';
 
 import EndpointHandles from './EndpointHandles';
@@ -40,15 +41,57 @@ export default function SeparatorShape({
 }: SeparatorShapeProps) {
   const colors = useCssVarColors(SEPARATOR_COLOR_VARS, SEPARATOR_FALLBACK_COLORS);
   const isEditing = !mode || mode === 'edit';
+  const [preview, setPreview] = useState<{
+    start: { x: number; y: number } | null;
+    end: { x: number; y: number } | null;
+  }>({
+    start: null,
+    end: null,
+  });
 
-  const dx = Number.isFinite(element.x2) ? element.x2 - element.x : 0;
-  const dy = Number.isFinite(element.y2) ? element.y2 - element.y : 0;
+  useEffect(() => {
+    if (!selected) {
+      setPreview({ start: null, end: null });
+    }
+  }, [selected]);
+
+  const startX = preview.start?.x ?? element.x;
+  const startY = preview.start?.y ?? element.y;
+  const endX = preview.end?.x ?? element.x2;
+  const endY = preview.end?.y ?? element.y2;
+  const dx = Number.isFinite(endX - startX) ? endX - startX : 0;
+  const dy = Number.isFinite(endY - startY) ? endY - startY : 0;
+
+  const updateEndpointPreview = ({
+    endpoint,
+    x,
+    y,
+  }: {
+    endpoint: 'start' | 'end';
+    x: number;
+    y: number;
+  }) => {
+    setPreview((prev) => ({
+      ...prev,
+      [endpoint]: prev[endpoint]?.x === x && prev[endpoint]?.y === y ? prev[endpoint] : { x, y },
+    }));
+  };
+
+  const clearEndpointPreview = () => {
+    setPreview({ start: null, end: null });
+  };
+
+  const handleGroupDragMove = (x: number, y: number) => {
+    const snappedX = snapToGrid(x);
+    const snappedY = snapToGrid(y);
+    return { snappedX, snappedY };
+  };
 
   return (
     <Group
       draggable={isEditing}
-      x={element.x}
-      y={element.y}
+      x={startX}
+      y={startY}
       onMouseDown={onSelect}
       onTouchStart={onSelect}
       onMouseEnter={(e) => setCursor(e, isEditing ? 'grab' : 'default')}
@@ -57,15 +100,24 @@ export default function SeparatorShape({
         isEditing
           ? (e) => {
               onSelect();
+              clearEndpointPreview();
               setCursor(e, 'grabbing');
+            }
+          : undefined
+      }
+      onDragMove={
+        isEditing
+          ? (e) => {
+              const { snappedX, snappedY } = handleGroupDragMove(e.target.x(), e.target.y());
+              e.target.x(snappedX);
+              e.target.y(snappedY);
             }
           : undefined
       }
       onDragEnd={
         isEditing
           ? (e) => {
-              const snappedX = snapToGrid(e.target.x());
-              const snappedY = snapToGrid(e.target.y());
+              const { snappedX, snappedY } = handleGroupDragMove(e.target.x(), e.target.y());
               e.target.x(snappedX);
               e.target.y(snappedY);
               onDragEnd(snappedX, snappedY);
@@ -94,12 +146,14 @@ export default function SeparatorShape({
       {selected ? (
         <EndpointHandles
           elementId={element.id}
-          elementX={element.x}
-          elementY={element.y}
+          elementX={startX}
+          elementY={startY}
           dx={dx}
           dy={dy}
           color={colors.selectedStroke}
           radius={7}
+          onEndpointPreview={updateEndpointPreview}
+          onEndpointPreviewEnd={clearEndpointPreview}
         />
       ) : null}
     </Group>

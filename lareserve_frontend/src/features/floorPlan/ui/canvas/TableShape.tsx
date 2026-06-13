@@ -84,6 +84,9 @@ function renderRoundTable(element: RoundTableElement, selected: boolean, colors:
   const chairWidth = 16;
   const chairHeight = 32;
   const chairDistance = element.radius + 12;
+  const seatCount = element.radius >= 60 ? 6 : 4;
+  const angleStep = (Math.PI * 2) / seatCount;
+  const startAngle = -Math.PI / 2;
 
   return (
     <>
@@ -94,46 +97,29 @@ function renderRoundTable(element: RoundTableElement, selected: boolean, colors:
         strokeWidth={selected ? 3 : 2}
       />
 
-      <Rect
-        x={-chairWidth}
-        y={-chairDistance - chairWidth / 2}
-        width={chairHeight}
-        height={chairWidth}
-        cornerRadius={5}
-        fill={colors.fill}
-        stroke={selected ? colors.selectedStroke : colors.defaultStroke}
-        strokeWidth={selected ? 3 : 2}
-      />
-      <Rect
-        x={-chairWidth}
-        y={chairDistance - chairWidth / 2}
-        width={chairHeight}
-        height={chairWidth}
-        cornerRadius={5}
-        fill={colors.fill}
-        stroke={selected ? colors.selectedStroke : colors.defaultStroke}
-        strokeWidth={selected ? 3 : 2}
-      />
-      <Rect
-        x={-chairDistance - chairWidth / 2}
-        y={-chairWidth}
-        width={chairWidth}
-        height={chairHeight}
-        cornerRadius={5}
-        fill={colors.fill}
-        stroke={selected ? colors.selectedStroke : colors.defaultStroke}
-        strokeWidth={selected ? 3 : 2}
-      />
-      <Rect
-        x={chairDistance - chairWidth / 2}
-        y={-chairWidth}
-        width={chairWidth}
-        height={chairHeight}
-        cornerRadius={5}
-        fill={colors.fill}
-        stroke={selected ? colors.selectedStroke : colors.defaultStroke}
-        strokeWidth={selected ? 3 : 2}
-      />
+      {Array.from({ length: seatCount }).map((_, index) => {
+        const angle = startAngle + index * angleStep;
+        const centerX = chairDistance * Math.cos(angle);
+        const centerY = chairDistance * Math.sin(angle);
+        const rotation = (angle * 180) / Math.PI;
+
+        return (
+          <Rect
+            key={`chair-${index}`}
+            x={centerX}
+            y={centerY}
+            width={chairWidth}
+            height={chairHeight}
+            offsetX={chairWidth / 2}
+            offsetY={chairHeight / 2}
+            rotation={rotation}
+            cornerRadius={5}
+            fill={colors.fill}
+            stroke={selected ? colors.selectedStroke : colors.defaultStroke}
+            strokeWidth={selected ? 3 : 2}
+          />
+        );
+      })}
     </>
   );
 }

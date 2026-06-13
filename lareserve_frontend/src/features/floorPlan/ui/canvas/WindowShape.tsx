@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Group, Line, Rect } from 'react-konva';
 
 import EndpointHandles from './EndpointHandles';
@@ -43,9 +44,27 @@ export default function WindowShape({
 }: WindowShapeProps) {
   const colors = useCssVarColors(WINDOW_COLOR_VARS, WINDOW_FALLBACK_COLORS);
   const isEditing = !mode || mode === 'edit';
+  const [preview, setPreview] = useState<{
+    start: { x: number; y: number } | null;
+    end: { x: number; y: number } | null;
+  }>({
+    start: null,
+    end: null,
+  });
 
-  const dx = Number.isFinite(element.x2) ? element.x2 - element.x : 0;
-  const dy = Number.isFinite(element.y2) ? element.y2 - element.y : 0;
+  useEffect(() => {
+    if (!selected) {
+      setPreview({ start: null, end: null });
+    }
+  }, [selected]);
+
+  const startX = preview.start?.x ?? element.x;
+  const startY = preview.start?.y ?? element.y;
+  const endX = preview.end?.x ?? element.x2;
+  const endY = preview.end?.y ?? element.y2;
+
+  const dx = Number.isFinite(endX - startX) ? endX - startX : 0;
+  const dy = Number.isFinite(endY - startY) ? endY - startY : 0;
   const length = Math.hypot(dx, dy);
   const rotation = Math.atan2(dy, dx) * (180 / Math.PI);
 
@@ -55,11 +74,36 @@ export default function WindowShape({
 
   const strokeColor = selected ? colors.selectedStroke : colors.stroke;
 
+  const updateEndpointPreview = ({
+    endpoint,
+    x,
+    y,
+  }: {
+    endpoint: 'start' | 'end';
+    x: number;
+    y: number;
+  }) => {
+    setPreview((prev) => ({
+      ...prev,
+      [endpoint]: prev[endpoint]?.x === x && prev[endpoint]?.y === y ? prev[endpoint] : { x, y },
+    }));
+  };
+
+  const clearEndpointPreview = () => {
+    setPreview({ start: null, end: null });
+  };
+
+  const handleGroupDragMove = (x: number, y: number) => {
+    const snappedX = snapToGrid(x);
+    const snappedY = snapToGrid(y);
+    return { snappedX, snappedY };
+  };
+
   return (
     <Group
       draggable={isEditing}
-      x={element.x}
-      y={element.y}
+      x={startX}
+      y={startY}
       rotation={rotation}
       onMouseDown={onSelect}
       onTouchStart={onSelect}
@@ -69,15 +113,24 @@ export default function WindowShape({
         isEditing
           ? (e) => {
               onSelect();
+              clearEndpointPreview();
               setCursor(e, 'grabbing');
+            }
+          : undefined
+      }
+      onDragMove={
+        isEditing
+          ? (e) => {
+              const { snappedX, snappedY } = handleGroupDragMove(e.target.x(), e.target.y());
+              e.target.x(snappedX);
+              e.target.y(snappedY);
             }
           : undefined
       }
       onDragEnd={
         isEditing
           ? (e) => {
-              const snappedX = snapToGrid(e.target.x());
-              const snappedY = snapToGrid(e.target.y());
+              const { snappedX, snappedY } = handleGroupDragMove(e.target.x(), e.target.y());
               e.target.x(snappedX);
               e.target.y(snappedY);
               onDragEnd(snappedX, snappedY);
@@ -112,13 +165,15 @@ export default function WindowShape({
       {selected ? (
         <EndpointHandles
           elementId={element.id}
-          elementX={element.x}
-          elementY={element.y}
+          elementX={startX}
+          elementY={startY}
           dx={length}
           dy={0}
           rotationDeg={rotation}
           color={colors.selectedStroke}
           radius={7}
+          onEndpointPreview={updateEndpointPreview}
+          onEndpointPreviewEnd={clearEndpointPreview}
         />
       ) : null}
     </Group>
