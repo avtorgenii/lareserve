@@ -14,31 +14,40 @@ from ..serializers.restaurants import (
     RestaurantLayoutUpdateSerializer,
     AvailableDatesResponseSerializer,
     AvailableTablesResponseSerializer,
-    AvailableTimesResponseSerializer
+    AvailableTimesResponseSerializer,
 )
 
 AVAILABLE_TIMES = [
-    '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
-    '17:00', '18:00', '19:00', '20:00', '21:00',
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+    "18:00",
+    "19:00",
+    "20:00",
+    "21:00",
 ]
 
 
 @extend_schema(responses={200: RestaurantSerializer(many=True)})
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def restaurant_list(request):
     """
     Get list of all restaurants with pagination.
     """
     paginator = PageNumberPagination()
-    restaurants = Restaurant.objects.all().order_by('name')
+    restaurants = Restaurant.objects.all().order_by("name")
     result_page = paginator.paginate_queryset(restaurants, request)
     serializer = RestaurantSerializer(result_page, many=True)
     return paginator.get_paginated_response(serializer.data)
 
 
 @extend_schema(request=RestaurantSerializer, responses={201: RestaurantSerializer})
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def restaurant_create(request):
     """
@@ -52,7 +61,7 @@ def restaurant_create(request):
 
 
 @extend_schema(request=RestaurantSerializer, responses={200: RestaurantSerializer})
-@api_view(['PUT'])
+@api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def restaurant_update(request, pk):
     """
@@ -61,7 +70,9 @@ def restaurant_update(request, pk):
     try:
         restaurant = Restaurant.objects.get(pk=pk)
     except Restaurant.DoesNotExist:
-        return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND
+        )
 
     serializer = RestaurantSerializer(restaurant, data=request.data)
     if serializer.is_valid():
@@ -71,7 +82,7 @@ def restaurant_update(request, pk):
 
 
 @extend_schema(responses={204: None})
-@api_view(['DELETE'])
+@api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
 def restaurant_delete(request, pk):
     """
@@ -80,14 +91,16 @@ def restaurant_delete(request, pk):
     try:
         restaurant = Restaurant.objects.get(pk=pk)
     except Restaurant.DoesNotExist:
-        return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND
+        )
 
     restaurant.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(responses={200: OpenApiTypes.OBJECT})
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def restaurant_get_layout(request, pk):
     """
@@ -96,16 +109,17 @@ def restaurant_get_layout(request, pk):
     try:
         restaurant = Restaurant.objects.get(pk=pk)
     except Restaurant.DoesNotExist:
-        return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND
+        )
 
     return Response(restaurant.layout)
 
 
 @extend_schema(
-    request=RestaurantLayoutUpdateSerializer,
-    responses={200: OpenApiTypes.OBJECT}
+    request=RestaurantLayoutUpdateSerializer, responses={200: OpenApiTypes.OBJECT}
 )
-@api_view(['PUT'])
+@api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def restaurant_update_layout(request, pk):
     """
@@ -114,22 +128,22 @@ def restaurant_update_layout(request, pk):
     try:
         restaurant = Restaurant.objects.get(pk=pk)
     except Restaurant.DoesNotExist:
-        return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND
+        )
 
     # We can use the serializer to validate the layout specifically
-    serializer = RestaurantSerializer(restaurant, data={'layout': request.data}, partial=True)
+    serializer = RestaurantSerializer(
+        restaurant, data={"layout": request.data}, partial=True
+    )
     if serializer.is_valid():
         serializer.save()
         return Response(restaurant.layout)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema(
-    responses={
-        200: AvailableDatesResponseSerializer
-    }
-)
-@api_view(['GET'])
+@extend_schema(responses={200: AvailableDatesResponseSerializer})
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def restaurant_available_dates(request, pk):
     """
@@ -138,7 +152,9 @@ def restaurant_available_dates(request, pk):
     try:
         Restaurant.objects.get(pk=pk)
     except Restaurant.DoesNotExist:
-        return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND
+        )
 
     today = timezone.localdate()
     dates = [(today + timedelta(days=i)).isoformat() for i in range(14)]
@@ -147,14 +163,23 @@ def restaurant_available_dates(request, pk):
 
 @extend_schema(
     parameters=[
-        OpenApiParameter(name="date", type=OpenApiTypes.DATE, location=OpenApiParameter.QUERY, required=True),
-        OpenApiParameter(name="time", type=OpenApiTypes.STR, location=OpenApiParameter.QUERY, required=True, description="Format HH:MM"),
+        OpenApiParameter(
+            name="date",
+            type=OpenApiTypes.DATE,
+            location=OpenApiParameter.QUERY,
+            required=True,
+        ),
+        OpenApiParameter(
+            name="time",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            required=True,
+            description="Format HH:MM",
+        ),
     ],
-    responses={
-        200: AvailableTablesResponseSerializer
-    }
+    responses={200: AvailableTablesResponseSerializer},
 )
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def restaurant_available_tables(request, pk):
     """
@@ -164,50 +189,70 @@ def restaurant_available_tables(request, pk):
     try:
         restaurant = Restaurant.objects.get(pk=pk)
     except Restaurant.DoesNotExist:
-        return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND
+        )
 
-    date_str = request.query_params.get('date')
-    time_str = request.query_params.get('time')
+    date_str = request.query_params.get("date")
+    time_str = request.query_params.get("time")
 
     if not date_str or not time_str:
-        return Response({"error": "date and time parameters are required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "date and time parameters are required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     try:
-        target_datetime = timezone.make_aware(datetime.combine(
-            datetime.strptime(date_str, '%Y-%m-%d').date(),
-            datetime.strptime(time_str, '%H:%M').time()
-        ))
+        target_datetime = timezone.make_aware(
+            datetime.combine(
+                datetime.strptime(date_str, "%Y-%m-%d").date(),
+                datetime.strptime(time_str, "%H:%M").time(),
+            )
+        )
     except ValueError:
-        return Response({"error": "Invalid date or time format. Use YYYY-MM-DD and HH:MM"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Invalid date or time format. Use YYYY-MM-DD and HH:MM"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     # Past date guard
     if target_datetime < timezone.now():
         # Everything is unavailable in the past
         layout = restaurant.layout or {}
-        floors = layout.get('floors', {})
+        floors = layout.get("floors", {})
         results = {
-            elem.get('id'): False for elem in floors.values()
-            if 'table' in elem.get('type', '').lower()
+            elem.get("id"): False
+            for elem in floors.values()
+            if "table" in elem.get("type", "").lower()
         }
         return Response({"tables": results})
 
     layout = restaurant.layout or {}
-    floors = layout.get('floors', {})
+    floors = layout.get("floors", {})
     table_ids = [
-        elem.get('id') for elem in floors.values()
-        if 'table' in elem.get('type', '').lower()
+        elem.get("id")
+        for elem in floors.values()
+        if "table" in elem.get("type", "").lower()
     ]
 
     from ..serializers.reservations import RESERVATION_BUFFER_HOURS
+
     buffer = timedelta(hours=RESERVATION_BUFFER_HOURS)
 
     # Get all reserved table IDs for this time slot
-    reserved_table_ids = Reservation.objects.filter(
-        restaurant=restaurant,
-        table_id__in=table_ids,
-        status=Reservation.Status.CONFIRMED,
-        date__range=(target_datetime - buffer + timedelta(seconds=1), target_datetime + buffer - timedelta(seconds=1))
-    ).values_list('table_id', flat=True).distinct()
+    reserved_table_ids = (
+        Reservation.objects.filter(
+            restaurant=restaurant,
+            table_id__in=table_ids,
+            status=Reservation.Status.CONFIRMED,
+            date__range=(
+                target_datetime - buffer + timedelta(seconds=1),
+                target_datetime + buffer - timedelta(seconds=1),
+            ),
+        )
+        .values_list("table_id", flat=True)
+        .distinct()
+    )
 
     results = {tid: (tid not in reserved_table_ids) for tid in table_ids}
     return Response({"tables": results})
@@ -215,13 +260,16 @@ def restaurant_available_tables(request, pk):
 
 @extend_schema(
     parameters=[
-        OpenApiParameter(name="date", type=OpenApiTypes.DATE, location=OpenApiParameter.QUERY, required=True),
+        OpenApiParameter(
+            name="date",
+            type=OpenApiTypes.DATE,
+            location=OpenApiParameter.QUERY,
+            required=True,
+        ),
     ],
-    responses={
-        200: AvailableTimesResponseSerializer
-    }
+    responses={200: AvailableTimesResponseSerializer},
 )
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def restaurant_available_times(request, pk):
     """
@@ -231,45 +279,69 @@ def restaurant_available_times(request, pk):
     try:
         restaurant = Restaurant.objects.get(pk=pk)
     except Restaurant.DoesNotExist:
-        return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND
+        )
 
-    date_str = request.query_params.get('date')
+    date_str = request.query_params.get("date")
     if not date_str:
-        return Response({"error": "Date parameter is required (YYYY-MM-DD)"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Date parameter is required (YYYY-MM-DD)"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     try:
-        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
-        return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Invalid date format. Use YYYY-MM-DD"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     layout = restaurant.layout or {}
-    floors = layout.get('floors', {})
+    floors = layout.get("floors", {})
     table_ids = [
-        elem.get('id') for elem in floors.values()
-        if 'table' in elem.get('type', '').lower()
+        elem.get("id")
+        for floor_elements in floors.values()
+        for elem in floor_elements
+        if "table" in elem.get("type", "").lower()
     ]
 
     if not table_ids:
-        return Response({"time_slots": {time: False for time in AVAILABLE_TIMES}})
+        return Response({time: False for time in AVAILABLE_TIMES})
 
     # Availability logic:
     # For each time slot, check if ANY table is available.
     # A table is unavailable if it has a confirmed reservation within 2 hours.
     from ..serializers.reservations import RESERVATION_BUFFER_HOURS
+
     buffer = timedelta(hours=RESERVATION_BUFFER_HOURS)
 
     results = {}
     for time_str in AVAILABLE_TIMES:
-        slot_time = timezone.make_aware(datetime.combine(target_date, datetime.strptime(time_str, '%H:%M').time()))
+        slot_time = timezone.make_aware(
+            datetime.combine(target_date, datetime.strptime(time_str, "%H:%M").time()),
+            timezone.get_current_timezone(),
+        )
 
         # Count tables that have conflicts at this slot
-        conflicts_count = Reservation.objects.filter(
-            restaurant=restaurant,
-            table_id__in=table_ids,
-            status=Reservation.Status.CONFIRMED,
-            date__range=(slot_time - buffer + timedelta(seconds=1), slot_time + buffer - timedelta(seconds=1))
-        ).values('table_id').distinct().count()
+        conflicts_count = (
+            Reservation.objects.filter(
+                restaurant=restaurant,
+                table_id__in=table_ids,
+                status=Reservation.Status.CONFIRMED,
+                date__range=(
+                    slot_time - buffer + timedelta(seconds=1),
+                    slot_time + buffer - timedelta(seconds=1),
+                ),
+            )
+            .values("table_id")
+            .distinct()
+            .count()
+        )
 
-        results[time_str] = conflicts_count < len(table_ids)
+        results[time_str] = conflicts_count < len(
+            table_ids
+        ) and slot_time >= timezone.localtime() + timedelta(hours=1)
 
-    return Response({"time_slots": results})
+    return Response(results)

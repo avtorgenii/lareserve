@@ -5,7 +5,7 @@ import type { Reservation, ReservationsLoadingState } from './types';
 import type { FloorElement, TableStatus } from '@/features/floorPlan/model/types';
 import type { RootState } from '@/store/rootReducer';
 
-import { selectFloorPlanElements } from '@/features/floorPlan/model/selectors';
+import { selectAllFloorElements } from '@/features/floorPlan/model/selectors';
 
 const selectRawReservations = (state: RootState): BackendReservation[] =>
   state.reservations.rawReservations;
@@ -29,7 +29,7 @@ function mapRaw(r: BackendReservation, elements: FloorElement[]): Reservation {
 
 export const selectTableStatusesByLabel = createSelector(
   selectRawReservations,
-  selectFloorPlanElements,
+  selectAllFloorElements,
   (rawReservations, elements) => {
     const result: Record<string, TableStatus> = {};
     for (const r of rawReservations) {
@@ -44,7 +44,7 @@ export const selectTableStatusesByLabel = createSelector(
 
 /** Returns table statuses keyed by element ID (for use with FloorPlanCanvas tableStatuses prop) */
 export const selectTableStatusesById = createSelector(
-  selectFloorPlanElements,
+  selectAllFloorElements,
   selectTableStatusesByLabel,
   (elements, statusesByLabel) => {
     const result: Record<string, TableStatus> = {};
@@ -60,7 +60,7 @@ export const selectTableStatusesById = createSelector(
 
 export const selectTodaysReservations = createSelector(
   selectRawReservations,
-  selectFloorPlanElements,
+  selectAllFloorElements,
   (rawReservations, elements) =>
     rawReservations
       .filter((r) => r.status !== 'CANCELLED')
@@ -84,7 +84,7 @@ export const selectReservationsLoadingState = (state: RootState): ReservationsLo
 
 export const selectSelectedTableReservations = createSelector(
   selectRawSelectedTableReservations,
-  selectFloorPlanElements,
+  selectAllFloorElements,
   (rawReservations, elements) =>
     rawReservations
       .filter((r) => r.status !== 'CANCELLED')

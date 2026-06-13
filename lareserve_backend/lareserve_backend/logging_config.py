@@ -45,11 +45,11 @@ def setup_loguru():
         "logs/app.log",
         format=formatter,
         level="DEBUG",
-        rotation='weekly',
+        rotation="weekly",
         retention="4 weeks",
         enqueue=True,  # Thread-safe
         backtrace=True,
-        diagnose=True
+        diagnose=True,
     )
 
     # File handler for errors only
@@ -57,20 +57,20 @@ def setup_loguru():
         "logs/errors.log",
         format=formatter,
         level="ERROR",
-        rotation='weekly',
+        rotation="weekly",
         retention="4 weeks",
         enqueue=True,  # Thread-safe
         backtrace=True,
-        diagnose=True
+        diagnose=True,
     )
 
     return logger
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logger = setup_loguru()
 
     try:
         50 / 0
     except Exception:
-        logger.exception('AAA')
+        logger.exception("AAA")

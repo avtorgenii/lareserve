@@ -10,7 +10,7 @@ import {
   touchUpdatedAt,
 } from './elementOperations';
 import { pushHistory, snapshotFloorPlan, restoreFromSnapshot } from './history';
-import { createInitialFloorPlanState } from './types';
+import { createInitialFloorPlanState, floorLabel } from './types';
 import { clampViewportScale, VIEWPORT_SCALE_FACTOR } from './viewport';
 
 import type {
@@ -45,6 +45,28 @@ const floorPlanSlice = createSlice({
 
     resetFloorPlan: () => createInitialFloorPlanState(),
 
+    setActiveFloor: (state, action: PayloadAction<string>) => {
+      if (state.floors[action.payload]) {
+        state.activeFloorId = action.payload;
+        state.selectedElementId = null;
+      }
+    },
+
+    createFloor: (state) => {
+      const existingIds = Object.keys(state.floors)
+        .map((id) => parseInt(id, 10))
+        .filter((n) => !isNaN(n));
+      const nextId = String(existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1);
+      state.floors[nextId] = {
+        id: nextId,
+        name: floorLabel(nextId),
+        elements: [],
+        updatedAt: new Date().toISOString(),
+      };
+      state.activeFloorId = nextId;
+      state.selectedElementId = null;
+    },
+
     selectElement: (state, action: PayloadAction<string | null>) => {
       state.selectedElementId = action.payload;
     },
@@ -78,7 +100,9 @@ const floorPlanSlice = createSlice({
     },
 
     duplicateElement: (state, action: PayloadAction<string>) => {
-      const source = state.elements.find((element) => element.id === action.payload);
+      const floor = state.floors[state.activeFloorId];
+      if (!floor) return;
+      const source = floor.elements.find((element) => element.id === action.payload);
       if (!source) return;
 
       pushHistory(state);
@@ -106,13 +130,15 @@ const floorPlanSlice = createSlice({
         };
       }
 
-      state.elements.push(copy);
+      floor.elements.push(copy);
       state.selectedElementId = id;
       touchUpdatedAt(state);
     },
 
     moveElement: (state, action: PayloadAction<MoveElementPayload>) => {
-      const element = state.elements.find((e) => e.id === action.payload.id);
+      const floor = state.floors[state.activeFloorId];
+      if (!floor) return;
+      const element = floor.elements.find((e) => e.id === action.payload.id);
       if (!element) return;
       if (element.x === action.payload.x && element.y === action.payload.y) return;
 
@@ -134,7 +160,9 @@ const floorPlanSlice = createSlice({
     },
 
     moveWallEndpoint: (state, action: PayloadAction<MoveWallEndpointPayload>) => {
-      const element = state.elements.find((e) => e.id === action.payload.id);
+      const floor = state.floors[state.activeFloorId];
+      if (!floor) return;
+      const element = floor.elements.find((e) => e.id === action.payload.id);
       if (
         !element ||
         (element.type !== 'wall' && element.type !== 'separator' && element.type !== 'window')
@@ -157,7 +185,9 @@ const floorPlanSlice = createSlice({
     },
 
     updateElementLabel: (state, action: PayloadAction<UpdateLabelPayload>) => {
-      const element = state.elements.find((e) => e.id === action.payload.id);
+      const floor = state.floors[state.activeFloorId];
+      if (!floor) return;
+      const element = floor.elements.find((e) => e.id === action.payload.id);
       if (!element) return;
       if (element.label === action.payload.label) return;
 
@@ -191,11 +221,13 @@ const floorPlanSlice = createSlice({
     },
 
     removeElement: (state, action: PayloadAction<string>) => {
-      const hasElement = state.elements.some((element) => element.id === action.payload);
+      const floor = state.floors[state.activeFloorId];
+      if (!floor) return;
+      const hasElement = floor.elements.some((element) => element.id === action.payload);
       if (!hasElement) return;
 
       pushHistory(state);
-      state.elements = state.elements.filter((e) => e.id !== action.payload);
+      floor.elements = floor.elements.filter((e) => e.id !== action.payload);
       if (state.selectedElementId === action.payload) {
         state.selectedElementId = null;
       }
@@ -235,7 +267,7 @@ const floorPlanSlice = createSlice({
     },
 
     saveFloorPlanRequested: () => {
-      // Listener middleware persists current state to storage.
+      // Listener middleware persists current state to API.
     },
   },
 });
@@ -243,6 +275,8 @@ const floorPlanSlice = createSlice({
 export const {
   hydrateFloorPlan,
   resetFloorPlan,
+  setActiveFloor,
+  createFloor,
   selectElement,
   clearSelection,
   addRoundTable,

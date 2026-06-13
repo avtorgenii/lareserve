@@ -4,9 +4,11 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from drf_spectacular.types import OpenApiTypes
 from ..models import Reservation, Restaurant
+from more_itertools import flatten
 
 # Default buffer time between reservations at the same table
 RESERVATION_BUFFER_HOURS = 2
+
 
 class ReservationSummarySerializer(serializers.ModelSerializer):
     guest_name = serializers.SerializerMethodField()
@@ -15,7 +17,16 @@ class ReservationSummarySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Reservation
-        fields = ['id', 'date', 'table_id', 'status', 'guest_name', 'email', 'phone', 'special_requests']
+        fields = [
+            "id",
+            "date",
+            "table_id",
+            "status",
+            "guest_name",
+            "email",
+            "phone",
+            "special_requests",
+        ]
 
     @extend_schema_field(OpenApiTypes.STR)
     def get_guest_name(self, obj):
@@ -44,15 +55,24 @@ class ReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
         fields = [
-            'id', 'restaurant', 'table_id', 'date', 'special_requests',
-            'guest_name', 'guest_email', 'guest_phone', 'status', 'user', 'created_at'
+            "id",
+            "restaurant",
+            "table_id",
+            "date",
+            "special_requests",
+            "guest_name",
+            "guest_email",
+            "guest_phone",
+            "status",
+            "user",
+            "created_at",
         ]
-        read_only_fields = ['user', 'status', 'created_at']
+        read_only_fields = ["user", "status", "created_at"]
 
     def validate(self, data):
-        restaurant = data.get('restaurant')
-        table_id = data.get('table_id')
-        reservation_date = data.get('date')
+        restaurant = data.get("restaurant")
+        table_id = data.get("table_id")
+        reservation_date = data.get("date")
 
         # 0. Check if date is in the past
         if reservation_date < timezone.now():
@@ -60,21 +80,31 @@ class ReservationSerializer(serializers.ModelSerializer):
 
         # 1. Check if table_id exists in restaurant layout and is a table
         layout = restaurant.layout
-        if not layout or 'floors' not in layout:
-            raise serializers.ValidationError({"table_id": "Restaurant has no layout defined."})
-        
-        floors = layout['floors']
+        if not layout or "floors" not in layout:
+            raise serializers.ValidationError(
+                {"table_id": "Restaurant has no layout defined."}
+            )
+
+        floors = layout["floors"]
         table_element = None
-        for element in floors.values():
-            if str(element.get('id')) == str(table_id):
+        for element in flatten(floors.values()):
+            if str(element.get("id")) == str(table_id):
                 table_element = element
                 break
-        
+
         if not table_element:
-            raise serializers.ValidationError({"table_id": f"Table with ID '{table_id}' not found in restaurant layout."})
-        
-        if 'table' not in table_element.get('type', '').lower():
-            raise serializers.ValidationError({"table_id": f"Element '{table_id}' is not a table (type: {table_element.get('type')})."})
+            raise serializers.ValidationError(
+                {
+                    "table_id": f"Table with ID '{table_id}' not found in restaurant layout."
+                }
+            )
+
+        if "table" not in table_element.get("type", "").lower():
+            raise serializers.ValidationError(
+                {
+                    "table_id": f"Element '{table_id}' is not a table (type: {table_element.get('type')})."
+                }
+            )
 
         # 2. Check for time conflicts
         # A conflict exists if another reservation for the same table is within X hours
@@ -87,16 +117,20 @@ class ReservationSerializer(serializers.ModelSerializer):
             restaurant=restaurant,
             table_id=table_id,
             status=Reservation.Status.CONFIRMED,
-            date__range=(start_range, end_range)
+            date__range=(start_range, end_range),
         )
 
         # If updating, exclude the current reservation
         if self.instance:
-            conflicting_reservations = conflicting_reservations.exclude(pk=self.instance.pk)
+            conflicting_reservations = conflicting_reservations.exclude(
+                pk=self.instance.pk
+            )
 
         if conflicting_reservations.exists():
             raise serializers.ValidationError(
-                {"date": f"Table '{table_id}' is already reserved within {RESERVATION_BUFFER_HOURS} hours of this time."}
+                {
+                    "date": f"Table '{table_id}' is already reserved within {RESERVATION_BUFFER_HOURS} hours of this time."
+                }
             )
 
         return data

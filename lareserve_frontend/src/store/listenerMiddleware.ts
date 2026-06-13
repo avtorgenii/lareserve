@@ -13,7 +13,7 @@ listenerMiddleware.startListening({
   effect: async (_action, api) => {
     const state = api.getState() as RootState;
     try {
-      await saveFloorPlanToApi(RESTAURANT_ID, state.floorPlan.elements);
+      await saveFloorPlanToApi(RESTAURANT_ID, state.floorPlan.floors);
     } catch (error) {
       console.error('[FloorPlan] Failed to save to API:', error);
     }

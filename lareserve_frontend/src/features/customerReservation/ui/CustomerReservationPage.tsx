@@ -7,13 +7,13 @@ import DateTimePicker from './DateTimePicker';
 import StepIndicator from './StepIndicator';
 import TablePickerStep from './TablePickerStep';
 import { fetchAvailableDates, fetchAvailableTimes, submitReservation } from '../model/api';
-import { FLOOR_LABELS } from '../model/types';
 
 import type { Step, ReservationForm } from '../model/types';
 
-import { selectFloorPlanElements } from '@/features/floorPlan/model/selectors';
+import { setActiveFloor } from '@/features/floorPlan/model/floorPlanSlice';
+import { selectActiveFloorId, selectFloorPlanElements, selectFloorsList } from '@/features/floorPlan/model/selectors';
 import { RESTAURANT_ID } from '@/shared/lib/constants';
-import { useAppSelector } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
 /** Converts an ISO date string to a human-readable Polish label for display. */
 function formatDatePolish(isoDate: string): string {
@@ -30,6 +30,7 @@ function formatDatePolish(isoDate: string): string {
 }
 
 export default function CustomerReservationPage() {
+  const dispatch = useAppDispatch();
   const [currentStep, setCurrentStep] = useState<Step>(1);
 
   // ISO date strings from API
@@ -43,7 +44,7 @@ export default function CustomerReservationPage() {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
 
-  const [activeFloorId, setActiveFloorId] = useState('ground');
+  const [activeFloorId, setActiveFloorId] = useState('');
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [form, setForm] = useState<ReservationForm>({
     guestName: '',
@@ -53,6 +54,17 @@ export default function CustomerReservationPage() {
   });
 
   const elements = useAppSelector(selectFloorPlanElements);
+  const floors = useAppSelector(selectFloorsList);
+  const reduxActiveFloorId = useAppSelector(selectActiveFloorId);
+
+  // Keep local active floor in sync with the store; also initialise it from store on first render.
+  useEffect(() => {
+    if (reduxActiveFloorId && reduxActiveFloorId !== activeFloorId) {
+      setActiveFloorId(reduxActiveFloorId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduxActiveFloorId]);
+
   const selectedElement = selectedElementId
     ? elements.find((el) => el.id === selectedElementId)
     : null;
@@ -138,6 +150,10 @@ export default function CustomerReservationPage() {
         RESTAURANT_ID,
         selectedElement.id,
         dateTime,
+        activeFloorId,
+        form.guestName,
+        form.email,
+        form.phone,
         form.specialRequests || undefined
       );
       alert(
@@ -174,11 +190,16 @@ export default function CustomerReservationPage() {
         <TablePickerStep
           date={displayDate}
           time={selectedTime}
+          floors={floors}
           activeFloorId={activeFloorId}
           selectedElement={selectedElement}
           form={form}
           onChangeDateTime={() => setCurrentStep(1)}
-          onFloorChange={setActiveFloorId}
+          onFloorChange={(id) => {
+            setActiveFloorId(id);
+            dispatch(setActiveFloor(id));
+            setSelectedElementId(null);
+          }}
           onTableClick={setSelectedElementId}
           onFormChange={handleFormChange}
           onConfirm={() => setCurrentStep(3)}
@@ -190,7 +211,7 @@ export default function CustomerReservationPage() {
           date={displayDate}
           time={selectedTime}
           tableLabel={selectedElement.label}
-          tableFloor={FLOOR_LABELS[activeFloorId]}
+          tableFloor={floors.find((f) => f.id === activeFloorId)?.name ?? activeFloorId}
           form={form}
           onGoBack={() => setCurrentStep(2)}
           onConfirm={handleConfirmReservation}

@@ -6,9 +6,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('lareserve', '0004_reservation_guest_email_reservation_guest_name_and_more'),
-        ('lareserve', '0004_reservation_table_id_charfield'),
+        ("lareserve", "0004_reservation_guest_email_reservation_guest_name_and_more"),
+        ("lareserve", "0004_reservation_table_id_charfield"),
     ]
 
-    operations = [
-    ]
+    operations = []

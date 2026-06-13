@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
-import { zoomIn, zoomOut } from '@/features/floorPlan/model/floorPlanSlice';
-import { selectFloorPlanElements, selectViewportScale } from '@/features/floorPlan/model/selectors';
+import { setActiveFloor, zoomIn, zoomOut } from '@/features/floorPlan/model/floorPlanSlice';
+import { selectActiveFloorId, selectFloorPlanElements, selectFloorsList, selectViewportScale } from '@/features/floorPlan/model/selectors';
 import FloorPlanCanvas from '@/features/floorPlan/ui/FloorPlanCanvas';
 import FloorPlanLegend from '@/features/floorPlan/ui/shared/FloorPlanLegend';
 import FloorSelector from '@/features/floorPlan/ui/shared/FloorSelector';
@@ -18,11 +18,6 @@ import {
   selectSelectedTableLoadingState,
 } from '@/features/reservations/model/selectors';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-
-const FLOORS = [
-  { id: 'ground', label: 'Parter' },
-  { id: 'floor1', label: 'Piętro 1', disabled: true },
-];
 
 const STATUS_LABELS = {
   available: 'Wolny',
@@ -50,9 +45,10 @@ const RESERVATION_STATUS_COLORS = {
 
 export default function StaffViewPage() {
   const dispatch = useAppDispatch();
-  const [activeFloorId, setActiveFloorId] = useState('ground');
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
 
+  const floors = useAppSelector(selectFloorsList);
+  const activeFloorId = useAppSelector(selectActiveFloorId);
   const elements = useAppSelector(selectFloorPlanElements);
   const tableStatuses = useAppSelector(selectTableStatusesById);
   const statusCounts = useAppSelector(selectTableStatusCounts);
@@ -94,9 +90,9 @@ export default function StaffViewPage() {
             Piętro
           </p>
           <FloorSelector
-            floors={FLOORS}
+            floors={floors.map((f) => ({ id: f.id, label: f.name }))}
             activeFloorId={activeFloorId}
-            onChange={setActiveFloorId}
+            onChange={(id) => dispatch(setActiveFloor(id))}
           />
         </div>
 

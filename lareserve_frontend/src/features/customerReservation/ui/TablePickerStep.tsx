@@ -1,7 +1,7 @@
 import DateTimeSummaryBar from './DateTimeSummaryBar';
-import { FLOORS, FLOOR_LABELS } from '../model/types';
 
 import type { ReservationForm } from '../model/types';
+import type { FloorData } from '@/features/floorPlan/model/types';
 import type { FloorElement } from '@/features/floorPlan/model/types';
 
 import FloorPlanCanvas from '@/features/floorPlan/ui/FloorPlanCanvas';
@@ -11,6 +11,7 @@ import FloorSelector from '@/features/floorPlan/ui/shared/FloorSelector';
 export default function TablePickerStep({
   date,
   time,
+  floors,
   activeFloorId,
   selectedElement,
   form,
@@ -22,6 +23,7 @@ export default function TablePickerStep({
 }: {
   date: string;
   time: string;
+  floors: Pick<FloorData, 'id' | 'name'>[];
   activeFloorId: string;
   selectedElement: FloorElement | null | undefined;
   form: ReservationForm;
@@ -32,6 +34,7 @@ export default function TablePickerStep({
   onConfirm: () => void;
 }) {
   const tableType = selectedElement?.type === 'roundTable' ? 'Okrągły' : 'Prostokątny';
+  const activeFloorName = floors.find((f) => f.id === activeFloorId)?.name ?? activeFloorId;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -49,7 +52,7 @@ export default function TablePickerStep({
             </span>
             <div className="pointer-events-auto">
               <FloorSelector
-                floors={FLOORS}
+                floors={floors.map((f) => ({ id: f.id, label: f.name }))}
                 activeFloorId={activeFloorId}
                 onChange={onFloorChange}
                 variant="tabs"
@@ -82,7 +85,7 @@ export default function TablePickerStep({
                     <div>
                       <p className="font-semibold text-text">{selectedElement.label}</p>
                       <p className="mt-0.5 text-xs text-text-muted">
-                        {tableType} · 4 miejsca · {FLOOR_LABELS[activeFloorId]}
+                        {tableType} · 4 miejsca · {activeFloorName}
                       </p>
                     </div>
                     <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">

@@ -1,27 +1,31 @@
-import type { FloorElement, FloorPlanHistoryEntry, FloorPlanState } from './types';
+import type { FloorData, FloorElement, FloorPlanHistoryEntry, FloorPlanState } from './types';
 
 export const HISTORY_LIMIT = 80;
-
-export function cloneMeta(meta: FloorPlanState['meta']) {
-  return { ...meta };
-}
 
 export function cloneElements(elements: FloorElement[]) {
   return elements.map((element) => ({ ...element }));
 }
 
+export function cloneFloors(floors: Record<string, FloorData>): Record<string, FloorData> {
+  const result: Record<string, FloorData> = {};
+  for (const [id, floor] of Object.entries(floors)) {
+    result[id] = { ...floor, elements: cloneElements(floor.elements) };
+  }
+  return result;
+}
+
 export function snapshotFloorPlan(state: FloorPlanState): FloorPlanHistoryEntry {
   return {
-    meta: cloneMeta(state.meta),
-    elements: cloneElements(state.elements),
+    floors: cloneFloors(state.floors),
+    activeFloorId: state.activeFloorId,
     selectedElementId: state.selectedElementId,
     viewportScale: state.viewportScale,
   };
 }
 
 export function restoreFromSnapshot(state: FloorPlanState, snapshot: FloorPlanHistoryEntry) {
-  state.meta = cloneMeta(snapshot.meta);
-  state.elements = cloneElements(snapshot.elements);
+  state.floors = cloneFloors(snapshot.floors);
+  state.activeFloorId = snapshot.activeFloorId;
   state.selectedElementId = snapshot.selectedElementId;
   state.viewportScale = snapshot.viewportScale;
 }

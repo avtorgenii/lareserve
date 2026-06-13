@@ -1,6 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
 
-import type { FloorElementType, FloorPlanState } from './types';
+import type { FloorData, FloorElementType, FloorPlanState } from './types';
 
 type RootStateLike = {
   floorPlan: FloorPlanState;
@@ -8,15 +8,53 @@ type RootStateLike = {
 
 export const selectFloorPlanState = (state: RootStateLike) => state.floorPlan;
 
-export const selectFloorPlanMeta = createSelector(
+// ---------------------------------------------------------------------------
+// Floor navigation
+// ---------------------------------------------------------------------------
+
+/** All floors keyed by id. */
+export const selectFloors = createSelector(
   [selectFloorPlanState],
-  (floorPlan) => floorPlan.meta
+  (floorPlan) => floorPlan.floors
 );
 
-export const selectFloorPlanElements = createSelector(
-  [selectFloorPlanState],
-  (floorPlan) => floorPlan.elements
+/** Sorted array of FloorData for use in FloorSelector components. */
+export const selectFloorsList = createSelector([selectFloors], (floors) =>
+  Object.values(floors).sort((a, b) => {
+    const na = parseInt(a.id, 10);
+    const nb = parseInt(b.id, 10);
+    return isNaN(na) || isNaN(nb) ? a.id.localeCompare(b.id) : na - nb;
+  })
 );
+
+export const selectActiveFloorId = createSelector(
+  [selectFloorPlanState],
+  (floorPlan) => floorPlan.activeFloorId
+);
+
+export const selectActiveFloor = createSelector(
+  [selectFloors, selectActiveFloorId],
+  (floors, activeId): FloorData | undefined => floors[activeId]
+);
+
+// ---------------------------------------------------------------------------
+// Elements — active floor (used by canvas, editor, sidebar)
+// ---------------------------------------------------------------------------
+
+/** Elements on the currently active floor. */
+export const selectFloorPlanElements = createSelector(
+  [selectActiveFloor],
+  (floor) => floor?.elements ?? []
+);
+
+/** All elements across every floor flattened — used for reservation table lookups. */
+export const selectAllFloorElements = createSelector([selectFloors], (floors) =>
+  Object.values(floors).flatMap((f) => f.elements)
+);
+
+// ---------------------------------------------------------------------------
+// Selection
+// ---------------------------------------------------------------------------
 
 export const selectSelectedElementId = createSelector(
   [selectFloorPlanState],
@@ -27,6 +65,10 @@ export const selectSelectedElement = createSelector(
   [selectFloorPlanElements, selectSelectedElementId],
   (elements, selectedId) => elements.find((el) => el.id === selectedId) ?? null
 );
+
+// ---------------------------------------------------------------------------
+// Viewport
+// ---------------------------------------------------------------------------
 
 export const selectViewportScale = createSelector(
   [selectFloorPlanState],
@@ -46,6 +88,10 @@ export const selectViewportCenter = createSelector(
   })
 );
 
+// ---------------------------------------------------------------------------
+// History
+// ---------------------------------------------------------------------------
+
 export const selectCanUndo = createSelector(
   [selectFloorPlanState],
   (floorPlan) => floorPlan.history.past.length > 0
@@ -55,6 +101,10 @@ export const selectCanRedo = createSelector(
   [selectFloorPlanState],
   (floorPlan) => floorPlan.history.future.length > 0
 );
+
+// ---------------------------------------------------------------------------
+// Element helpers (active floor)
+// ---------------------------------------------------------------------------
 
 export const selectElementsByType = (type: FloorElementType) =>
   createSelector([selectFloorPlanElements], (elements) =>

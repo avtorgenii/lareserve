@@ -9,6 +9,7 @@ class User(AbstractUser):
     Custom User model.
     Django will add email, password, firstName, lastName etc. automatically.
     """
+
     phone = models.CharField(max_length=20, blank=True, null=True)
 
     def __str__(self):
@@ -45,14 +46,12 @@ class Restaurant(models.Model):
 # ##### RESERVATIONS #####
 class Reservation(models.Model):
     class Status(models.TextChoices):
-        CONFIRMED = 'CONFIRMED'
-        CANCELLED = 'CANCELLED'
-        FINISHED = 'FINISHED'
+        CONFIRMED = "CONFIRMED"
+        CANCELLED = "CANCELLED"
+        FINISHED = "FINISHED"
 
     status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.CONFIRMED
+        max_length=20, choices=Status.choices, default=Status.CONFIRMED
     )
 
     special_requests = models.TextField(blank=True, null=True)
@@ -68,16 +67,14 @@ class Reservation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     restaurant = models.ForeignKey(
-        Restaurant,
-        on_delete=models.CASCADE,
-        related_name='reservations'
+        Restaurant, on_delete=models.CASCADE, related_name="reservations"
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='reservations',
+        related_name="reservations",
         null=True,
-        blank=True
+        blank=True,
     )
 
     def __str__(self):

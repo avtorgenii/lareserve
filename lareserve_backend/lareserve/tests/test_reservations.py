@@ -5,99 +5,124 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from ..models import Restaurant, Reservation, User
 
+
 class ReservationTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            username='testuser', 
-            email='test@example.com', 
-            password='password123',
-            first_name='John',
-            last_name='Doe'
+            username="testuser",
+            email="test@example.com",
+            password="password123",
+            first_name="John",
+            last_name="Doe",
         )
         self.client.force_authenticate(user=self.user)
 
-        self.table_id_1 = 'a1b2c3d4-0001-0001-0001-000000000001'
-        self.table_id_2 = 'a1b2c3d4-0002-0002-0002-000000000002'
+        self.table_id_1 = "a1b2c3d4-0001-0001-0001-000000000001"
+        self.table_id_2 = "a1b2c3d4-0002-0002-0002-000000000002"
         self.layout = {
-            'floors': {
-                '1': {'id': self.table_id_1, 'type': 'table', 'x': 0, 'y': 0, 'label': 'Table 1'},
-                '2': {'id': self.table_id_2, 'type': 'table', 'x': 10, 'y': 10, 'label': 'Table 2'}
+            "floors": {
+                "1": {
+                    "id": self.table_id_1,
+                    "type": "table",
+                    "x": 0,
+                    "y": 0,
+                    "label": "Table 1",
+                },
+                "2": {
+                    "id": self.table_id_2,
+                    "type": "table",
+                    "x": 10,
+                    "y": 10,
+                    "label": "Table 2",
+                },
             }
         }
         self.restaurant = Restaurant.objects.create(
-            name='Test Restaurant', country='Poland', city='Warsaw', building_number='10',
-            layout=self.layout
+            name="Test Restaurant",
+            country="Poland",
+            city="Warsaw",
+            building_number="10",
+            layout=self.layout,
         )
 
     def test_reservation_create_with_special_requests(self):
-        url = reverse('reservation-create')
+        url = reverse("reservation-create")
         date = timezone.now() + timedelta(days=1)
         data = {
-            'restaurant': self.restaurant.id,
-            'table_id': self.table_id_1,
-            'date': date.isoformat(),
-            'special_requests': 'Near the window'
+            "restaurant": self.restaurant.id,
+            "table_id": self.table_id_1,
+            "date": date.isoformat(),
+            "special_requests": "Near the window",
         }
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['special_requests'], 'Near the window')
+        self.assertEqual(response.data["special_requests"], "Near the window")
 
     def test_reservation_list_today(self):
         Reservation.objects.create(
-            restaurant=self.restaurant, user=self.user, table_id=self.table_id_1,
-            date=timezone.now(), special_requests='Today test'
+            restaurant=self.restaurant,
+            user=self.user,
+            table_id=self.table_id_1,
+            date=timezone.now(),
+            special_requests="Today test",
         )
-        url = reverse('reservation-list-today')
-        response = self.client.get(url, {'restaurant_id': self.restaurant.id})
+        url = reverse("reservation-list-today")
+        response = self.client.get(url, {"restaurant_id": self.restaurant.id})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[0]['guest_name'], 'John Doe')
+        self.assertEqual(response.data[0]["guest_name"], "John Doe")
 
     def test_reservation_update_status(self):
         res = Reservation.objects.create(
-            restaurant=self.restaurant, user=self.user, table_id=self.table_id_1, date=timezone.now()
+            restaurant=self.restaurant,
+            user=self.user,
+            table_id=self.table_id_1,
+            date=timezone.now(),
         )
-        url = reverse('reservation-update-status', kwargs={'pk': res.pk})
+        url = reverse("reservation-update-status", kwargs={"pk": res.pk})
         # Testing PUT as PATCH was removed
-        response = self.client.put(url, {'status': 'FINISHED'}, format='json')
+        response = self.client.put(url, {"status": "FINISHED"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         res.refresh_from_db()
-        self.assertEqual(res.status, 'FINISHED')
+        self.assertEqual(res.status, "FINISHED")
 
     def test_reservation_create_guest(self):
         # Unauthenticate
         self.client.force_authenticate(user=None)
-        url = reverse('reservation-create')
+        url = reverse("reservation-create")
         date = timezone.now() + timedelta(days=1)
         data = {
-            'restaurant': self.restaurant.id,
-            'table_id': self.table_id_1,
-            'date': date.isoformat(),
-            'guest_name': 'Guest User',
-            'guest_email': 'guest@example.com'
+            "restaurant": self.restaurant.id,
+            "table_id": self.table_id_1,
+            "date": date.isoformat(),
+            "guest_name": "Guest User",
+            "guest_email": "guest@example.com",
         }
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['guest_name'], 'Guest User')
-        self.assertIsNone(response.data['user'])
+        self.assertEqual(response.data["guest_name"], "Guest User")
+        self.assertIsNone(response.data["user"])
 
     def test_reservation_past_date_fails(self):
-        url = reverse('reservation-create')
+        url = reverse("reservation-create")
         past_date = timezone.now() - timedelta(hours=1)
         data = {
-            'restaurant': self.restaurant.id,
-            'table_id': self.table_id_1,
-            'date': past_date.isoformat(),
-            'guest_name': 'Past Guest'
+            "restaurant": self.restaurant.id,
+            "table_id": self.table_id_1,
+            "date": past_date.isoformat(),
+            "guest_name": "Past Guest",
         }
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('date', response.data)
+        self.assertIn("date", response.data)
 
     def test_reservation_delete(self):
         res = Reservation.objects.create(
-            restaurant=self.restaurant, user=self.user, table_id=self.table_id_1, date=timezone.now() + timedelta(days=1)
+            restaurant=self.restaurant,
+            user=self.user,
+            table_id=self.table_id_1,
+            date=timezone.now() + timedelta(days=1),
         )
-        url = reverse('reservation-delete', kwargs={'pk': res.pk})
+        url = reverse("reservation-delete", kwargs={"pk": res.pk})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Reservation.objects.count(), 0)
@@ -108,14 +133,17 @@ class ReservationTests(APITestCase):
             restaurant=self.restaurant,
             user=self.user,
             table_id=self.table_id_2,
-            date=timezone.now()
+            date=timezone.now(),
         )
-        url = reverse('reservation-by-table')
-        response = self.client.get(url, {
-            'restaurant_id': self.restaurant.id,
-            'table_id': self.table_id_2,
-            'date': date.isoformat()
-        })
+        url = reverse("reservation-by-table")
+        response = self.client.get(
+            url,
+            {
+                "restaurant_id": self.restaurant.id,
+                "table_id": self.table_id_2,
+                "date": date.isoformat(),
+            },
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['table_id'], self.table_id_2)
+        self.assertEqual(response.data[0]["table_id"], self.table_id_2)

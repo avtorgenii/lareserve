@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('lareserve', '0001_initial'),
+        ("lareserve", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='reservation',
-            name='table_id',
+            model_name="reservation",
+            name="table_id",
             field=models.IntegerField(default=1),
             preserve_default=False,
         ),

@@ -8,33 +8,39 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('lareserve', '0003_reservation_special_requests'),
+        ("lareserve", "0003_reservation_special_requests"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='reservation',
-            name='guest_email',
+            model_name="reservation",
+            name="guest_email",
             field=models.EmailField(blank=True, max_length=254, null=True),
         ),
         migrations.AddField(
-            model_name='reservation',
-            name='guest_name',
+            model_name="reservation",
+            name="guest_name",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='reservation',
-            name='guest_phone',
+            model_name="reservation",
+            name="guest_phone",
             field=models.CharField(blank=True, max_length=20, null=True),
         ),
         migrations.AlterField(
-            model_name='reservation',
-            name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='reservations', to=settings.AUTH_USER_MODEL),
+            model_name="reservation",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="reservations",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='restaurant',
-            name='layout',
-            field=models.JSONField(default=dict, help_text='Layout elements'),
+            model_name="restaurant",
+            name="layout",
+            field=models.JSONField(default=dict, help_text="Layout elements"),
         ),
     ]

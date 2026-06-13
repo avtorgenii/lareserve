@@ -21,16 +21,17 @@ function FloorPlanHydrator() {
 
   useEffect(() => {
     loadFloorPlanFromApi(RESTAURANT_ID)
-      .then((elements) => {
-        if (elements.length > 0) {
+      .then((floors) => {
+        if (Object.keys(floors).length > 0) {
+          const firstFloorId = Object.keys(floors).sort((a, b) => {
+            const na = parseInt(a, 10);
+            const nb = parseInt(b, 10);
+            return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
+          })[0];
           appStore.dispatch(
             hydrateFloorPlan({
-              meta: {
-                id: 'default-floor',
-                name: 'Main Hall',
-                updatedAt: new Date().toISOString(),
-              },
-              elements,
+              floors,
+              activeFloorId: firstFloorId,
               selectedElementId: null,
               viewportScale: DEFAULT_VIEWPORT_SCALE,
               viewportPan: { x: 0, y: 0 },

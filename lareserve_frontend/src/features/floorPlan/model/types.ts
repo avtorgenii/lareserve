@@ -64,9 +64,10 @@ export type FloorElement =
   | DoorElement
   | SeparatorElement;
 
-export type FloorPlanMeta = {
+export type FloorData = {
   id: string;
   name: string;
+  elements: FloorElement[];
   updatedAt: string;
 };
 
@@ -76,16 +77,16 @@ export type ViewportPan = {
 };
 
 export type FloorPlanPersistedState = {
-  meta: FloorPlanMeta;
-  elements: FloorElement[];
+  floors: Record<string, FloorData>;
+  activeFloorId: string;
   selectedElementId: string | null;
   viewportScale: number;
   viewportPan: ViewportPan;
 };
 
 export type FloorPlanHistoryEntry = {
-  meta: FloorPlanMeta;
-  elements: FloorElement[];
+  floors: Record<string, FloorData>;
+  activeFloorId: string;
   selectedElementId: string | null;
   viewportScale: number;
 };
@@ -100,14 +101,28 @@ export type FloorPlanState = FloorPlanPersistedState & {
 export const FLOOR_PLAN_STORAGE_KEY = 'restaurant-floor-plan-v1';
 export const DEFAULT_VIEWPORT_SCALE = 1;
 
+/**
+ * Generates a display label for a floor from its numeric string id.
+ * "1" → "Parter", "2" → "Piętro 1", "3" → "Piętro 2", etc.
+ */
+export function floorLabel(id: string): string {
+  const n = parseInt(id, 10);
+  if (isNaN(n) || n < 1) return id;
+  if (n === 1) return 'Parter';
+  return `Piętro ${n - 1}`;
+}
+
 export const createInitialFloorPlanState = (): FloorPlanState => ({
-  meta: {
-    id: 'default-floor',
-    name: 'Main Hall',
-    updatedAt: new Date().toISOString(),
+  floors: {
+    '1': {
+      id: '1',
+      name: 'Parter',
+      elements: [],
+      updatedAt: new Date().toISOString(),
+    },
   },
+  activeFloorId: '1',
   selectedElementId: null,
-  elements: [],
   viewportScale: DEFAULT_VIEWPORT_SCALE,
   viewportPan: { x: 0, y: 0 },
   history: {

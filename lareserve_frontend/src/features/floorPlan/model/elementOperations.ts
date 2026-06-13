@@ -1,4 +1,4 @@
-import { cloneElements, cloneMeta, pushHistory } from './history';
+import { cloneElements, cloneFloors, pushHistory } from './history';
 import { clampViewportScale } from './viewport';
 
 import type {
@@ -18,6 +18,7 @@ import type {
   ResizeWindowPayload,
 } from './payloadTypes';
 import type {
+  FloorData,
   FloorElement,
   FloorElementType,
   FloorPlanPersistedState,
@@ -166,12 +167,20 @@ export function generateId(prefix: FloorElementType): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
+/** Returns the active FloorData, or undefined if activeFloorId is not in floors. */
+function getActiveFloor(state: FloorPlanState): FloorData | undefined {
+  return state.floors[state.activeFloorId];
+}
+
 export function nextIndexByType(state: FloorPlanState, type: FloorElementType): number {
-  return state.elements.filter((e) => e.type === type).length + 1;
+  const floor = getActiveFloor(state);
+  if (!floor) return 1;
+  return floor.elements.filter((e) => e.type === type).length + 1;
 }
 
 export function touchUpdatedAt(state: FloorPlanState) {
-  state.meta.updatedAt = new Date().toISOString();
+  const floor = getActiveFloor(state);
+  if (floor) floor.updatedAt = new Date().toISOString();
 }
 
 export function addElement<T extends FloorElementType>(
@@ -179,12 +188,15 @@ export function addElement<T extends FloorElementType>(
   type: T,
   payload: AddPayloadByType[T] = {} as AddPayloadByType[T]
 ) {
+  const floor = getActiveFloor(state);
+  if (!floor) return;
+
   pushHistory(state);
   const id = generateId(type);
   const index = nextIndexByType(state, type);
   const label = payload.label ?? `${LABEL_PREFIX[type]}${index}`;
   const element = ELEMENT_BUILDERS[type](id, label, payload);
-  state.elements.push(element);
+  floor.elements.push(element);
   state.selectedElementId = id;
   touchUpdatedAt(state);
 }
@@ -194,7 +206,10 @@ export function resizeElement<T extends FloorElementType>(
   type: T,
   payload: ResizePayloadByType[T]
 ) {
-  const element = state.elements.find(
+  const floor = getActiveFloor(state);
+  if (!floor) return;
+
+  const element = floor.elements.find(
     (e): e is Extract<FloorElement, { type: T }> => e.id === payload.id && e.type === type
   );
 
@@ -208,8 +223,8 @@ export function resizeElement<T extends FloorElementType>(
 
 export function toRuntimeState(payload: FloorPlanPersistedState): FloorPlanState {
   return {
-    meta: cloneMeta(payload.meta),
-    elements: cloneElements(payload.elements),
+    floors: cloneFloors(payload.floors),
+    activeFloorId: payload.activeFloorId,
     selectedElementId: payload.selectedElementId,
     viewportScale: clampViewportScale(payload.viewportScale),
     viewportPan: payload.viewportPan ?? { x: 0, y: 0 },

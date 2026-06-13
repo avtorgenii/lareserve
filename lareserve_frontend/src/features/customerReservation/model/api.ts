@@ -76,12 +76,20 @@ export async function submitReservation(
   restaurantId: number,
   tableId: string,
   dateTime: string, // ISO datetime "YYYY-MM-DDTHH:MM:00Z"
-  specialRequests?: string
+  floorId: string,
+  name: string,
+  email: string,
+  phone: string,
+  specialRequests?: string,
 ): Promise<void> {
   await apiClient.post('/reservations/', {
     restaurant: restaurantId,
     table_id: tableId,
+    floor_id: floorId,
     date: dateTime,
     special_requests: specialRequests ?? '',
+    guest_name: name,
+    guest_email: email,
+    guest_phone: phone,
   });
 }

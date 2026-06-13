@@ -1,7 +1,14 @@
 'use client';
 
-import { redoFloorPlan, saveFloorPlanRequested, undoFloorPlan } from '../model/floorPlanSlice';
-import { selectCanRedo, selectCanUndo } from '../model/selectors';
+import {
+  createFloor,
+  redoFloorPlan,
+  saveFloorPlanRequested,
+  setActiveFloor,
+  undoFloorPlan,
+} from '../model/floorPlanSlice';
+import { selectActiveFloorId, selectCanRedo, selectCanUndo, selectFloorsList } from '../model/selectors';
+import FloorSelector from './shared/FloorSelector';
 
 import { Button, IconButton } from '@/shared/ui';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -11,6 +18,8 @@ export default function FloorPlanTopBar() {
   const dispatch = useAppDispatch();
   const canUndo = useAppSelector(selectCanUndo);
   const canRedo = useAppSelector(selectCanRedo);
+  const floors = useAppSelector(selectFloorsList);
+  const activeFloorId = useAppSelector(selectActiveFloorId);
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-surface px-4">
@@ -23,11 +32,18 @@ export default function FloorPlanTopBar() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button size="sm">Parter</Button>
-        <Button size="sm" className="bg-surface-subtle text-text-subtle">
-          Pietro 1
-        </Button>
-        <IconButton size="md" aria-label="Dodaj pietro" className="text-base leading-none">
+        <FloorSelector
+          floors={floors.map((f) => ({ id: f.id, label: f.name }))}
+          activeFloorId={activeFloorId}
+          onChange={(id) => dispatch(setActiveFloor(id))}
+          variant="tabs"
+        />
+        <IconButton
+          size="md"
+          aria-label="Dodaj piętro"
+          className="text-base leading-none"
+          onClick={() => dispatch(createFloor())}
+        >
           +
         </IconButton>
       </div>

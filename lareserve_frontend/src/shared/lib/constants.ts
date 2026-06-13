@@ -1,1 +1,1 @@
-export const RESTAURANT_ID = 3;
+export const RESTAURANT_ID = 6;
