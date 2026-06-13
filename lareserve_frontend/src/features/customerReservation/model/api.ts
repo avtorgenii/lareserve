@@ -58,10 +58,9 @@ export async function fetchAvailableTimes(
   restaurantId: number,
   date: string // ISO date "YYYY-MM-DD"
 ): Promise<Record<string, boolean>> {
-  const response = await apiClient.get<unknown>(
-    `/restaurants/${restaurantId}/available-times/`,
-    { params: { date } }
-  );
+  const response = await apiClient.get<unknown>(`/restaurants/${restaurantId}/available-times/`, {
+    params: { date },
+  });
   return normalizeTimes(response.data);
 }
 
@@ -80,7 +79,7 @@ export async function submitReservation(
   name: string,
   email: string,
   phone: string,
-  specialRequests?: string,
+  specialRequests?: string
 ): Promise<void> {
   await apiClient.post('/reservations/', {
     restaurant: restaurantId,

@@ -13,10 +13,7 @@ export const selectFloorPlanState = (state: RootStateLike) => state.floorPlan;
 // ---------------------------------------------------------------------------
 
 /** All floors keyed by id. */
-export const selectFloors = createSelector(
-  [selectFloorPlanState],
-  (floorPlan) => floorPlan.floors
-);
+export const selectFloors = createSelector([selectFloorPlanState], (floorPlan) => floorPlan.floors);
 
 /** Sorted array of FloorData for use in FloorSelector components. */
 export const selectFloorsList = createSelector([selectFloors], (floors) =>

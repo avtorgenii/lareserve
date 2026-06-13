@@ -1,6 +1,7 @@
+import { floorLabel } from '../model/types';
+
 import type { FloorData, FloorElement } from '../model/types';
 
-import { floorLabel } from '../model/types';
 import { apiClient } from '@/shared/lib/apiClient';
 
 /** Shape returned by GET /api/v1/restaurants/{id}/layout/ */

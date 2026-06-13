@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
-import { tokenStorage } from '../model/tokenStorage';
 import { AuthActionButton } from './GoogleSignInButton';
+import { tokenStorage } from '../model/tokenStorage';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');

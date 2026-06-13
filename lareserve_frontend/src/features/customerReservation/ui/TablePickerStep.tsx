@@ -1,8 +1,7 @@
 import DateTimeSummaryBar from './DateTimeSummaryBar';
 
 import type { ReservationForm } from '../model/types';
-import type { FloorData } from '@/features/floorPlan/model/types';
-import type { FloorElement } from '@/features/floorPlan/model/types';
+import type { FloorData, FloorElement } from '@/features/floorPlan/model/types';
 
 import FloorPlanCanvas from '@/features/floorPlan/ui/FloorPlanCanvas';
 import FloorPlanLegend from '@/features/floorPlan/ui/shared/FloorPlanLegend';

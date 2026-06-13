@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import {
   createFloor,
   redoFloorPlan,
@@ -7,12 +9,16 @@ import {
   setActiveFloor,
   undoFloorPlan,
 } from '../model/floorPlanSlice';
-import { selectActiveFloorId, selectCanRedo, selectCanUndo, selectFloorsList } from '../model/selectors';
+import {
+  selectActiveFloorId,
+  selectCanRedo,
+  selectCanUndo,
+  selectFloorsList,
+} from '../model/selectors';
 import FloorSelector from './shared/FloorSelector';
 
 import { Button, IconButton } from '@/shared/ui';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import Link from 'next/link';
 
 export default function FloorPlanTopBar() {
   const dispatch = useAppDispatch();
@@ -50,7 +56,11 @@ export default function FloorPlanTopBar() {
 
       <div className="flex items-center gap-2">
         <Link href="/staff">
-          <IconButton size="md" aria-label="Wróć do strony personelu" title="Wróć do strony personelu">
+          <IconButton
+            size="md"
+            aria-label="Wróć do strony personelu"
+            title="Wróć do strony personelu"
+          >
             ↩
           </IconButton>
         </Link>
@@ -67,7 +77,7 @@ export default function FloorPlanTopBar() {
             dispatch(saveFloorPlanRequested());
           }}
         >
-          {'Zapisz'}
+          Zapisz
         </Button>
       </div>
     </header>

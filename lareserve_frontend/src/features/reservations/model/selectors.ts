@@ -86,9 +86,7 @@ export const selectSelectedTableReservations = createSelector(
   selectRawSelectedTableReservations,
   selectAllFloorElements,
   (rawReservations, elements) =>
-    rawReservations
-      .filter((r) => r.status !== 'CANCELLED')
-      .map((r) => mapRaw(r, elements))
+    rawReservations.filter((r) => r.status !== 'CANCELLED').map((r) => mapRaw(r, elements))
 );
 
 export const selectSelectedTableLoadingState = (state: RootState): ReservationsLoadingState =>

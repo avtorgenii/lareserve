@@ -1,4 +1,4 @@
-import { cloneElements, cloneFloors, pushHistory } from './history';
+import { cloneFloors, pushHistory } from './history';
 import { clampViewportScale } from './viewport';
 
 import type {

@@ -11,7 +11,11 @@ import { fetchAvailableDates, fetchAvailableTimes, submitReservation } from '../
 import type { Step, ReservationForm } from '../model/types';
 
 import { setActiveFloor } from '@/features/floorPlan/model/floorPlanSlice';
-import { selectActiveFloorId, selectFloorPlanElements, selectFloorsList } from '@/features/floorPlan/model/selectors';
+import {
+  selectActiveFloorId,
+  selectFloorPlanElements,
+  selectFloorsList,
+} from '@/features/floorPlan/model/selectors';
 import { RESTAURANT_ID } from '@/shared/lib/constants';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
@@ -62,7 +66,7 @@ export default function CustomerReservationPage() {
     if (reduxActiveFloorId && reduxActiveFloorId !== activeFloorId) {
       setActiveFloorId(reduxActiveFloorId);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduxActiveFloorId]);
 
   const selectedElement = selectedElementId
@@ -74,7 +78,6 @@ export default function CustomerReservationPage() {
     setDatesLoading(true);
     fetchAvailableDates(RESTAURANT_ID)
       .then((fetchedDates) => {
-        console.log('[Reservation][DEBUG] fetched dates:', fetchedDates);
         setDates(fetchedDates);
         if (fetchedDates.length > 0) {
           setSelectedDate(fetchedDates[0]);
@@ -96,21 +99,6 @@ export default function CustomerReservationPage() {
         if (!isActive) return;
 
         const availabilityEntries = Object.entries(fetchedTimes);
-        const availableTimes = availabilityEntries
-          .filter(([, available]) => available)
-          .map(([slot]) => slot);
-        const unavailableTimes = availabilityEntries
-          .filter(([, available]) => !available)
-          .map(([slot]) => slot);
-
-        console.log('[Reservation][DEBUG] fetched time availability:', {
-          date: selectedDate,
-          raw: fetchedTimes,
-          availableCount: availableTimes.length,
-          unavailableCount: unavailableTimes.length,
-          availableTimes,
-          unavailableTimes,
-        });
 
         setTimes(fetchedTimes);
         // Auto-select first available time slot

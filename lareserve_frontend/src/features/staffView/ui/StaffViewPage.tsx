@@ -3,11 +3,21 @@
 import { useEffect, useState } from 'react';
 
 import { setActiveFloor, zoomIn, zoomOut } from '@/features/floorPlan/model/floorPlanSlice';
-import { selectActiveFloorId, selectFloorPlanElements, selectFloorsList, selectViewportScale } from '@/features/floorPlan/model/selectors';
+import {
+  selectActiveFloorId,
+  selectFloorPlanElements,
+  selectFloorsList,
+  selectViewportScale,
+} from '@/features/floorPlan/model/selectors';
 import FloorPlanCanvas from '@/features/floorPlan/ui/FloorPlanCanvas';
 import FloorPlanLegend from '@/features/floorPlan/ui/shared/FloorPlanLegend';
 import FloorSelector from '@/features/floorPlan/ui/shared/FloorSelector';
-import { fetchTodaysReservations, fetchTableReservations, cancelReservation, finishReservation } from '@/features/reservations/model/reservationsSlice';
+import {
+  fetchTodaysReservations,
+  fetchTableReservations,
+  cancelReservation,
+  finishReservation,
+} from '@/features/reservations/model/reservationsSlice';
 import {
   selectTableStatusCounts,
   selectTableStatusesById,
