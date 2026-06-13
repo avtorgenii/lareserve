@@ -14,6 +14,7 @@ import { selectSelectedElement, selectViewportCenter } from '../model/selectors'
 
 import type { FloorElement } from '../model/types';
 
+import { getElementCapacityLabel } from '@/features/shared/helpers';
 import { Button, Panel, SectionLabel } from '@/shared/ui';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
@@ -33,7 +34,7 @@ function getElementTypeLabel(element: FloorElement) {
     case 'roundTable':
       return 'Okragly stol';
     case 'rectTable':
-      return 'Kwadratowy stol';
+      return 'Prostokątny stol';
     case 'wall':
       return 'Sciana';
     case 'window':
@@ -45,22 +46,6 @@ function getElementTypeLabel(element: FloorElement) {
     default:
       return 'Element';
   }
-}
-
-function getElementCapacityLabel(element: FloorElement) {
-  if (element.type === 'roundTable') {
-    return element.radius >= 60 ? '6 miejsc' : '4 miejsca';
-  }
-
-  if (element.type === 'rectTable') {
-    return element.width >= 130 ? '4-6 miejsc' : '4 miejsca';
-  }
-
-  if (element.type === 'wall' || element.type === 'separator' || element.type === 'window') {
-    return `${Math.round(Math.hypot(element.x2 - element.x, element.y2 - element.y))} px`;
-  }
-
-  return `${Math.round(element.width)} px`;
 }
 
 function PaletteSection({ title, items }: PaletteSectionProps) {
@@ -102,12 +87,12 @@ export default function FloorPlanSidebar() {
     },
     {
       id: 'rect-4',
-      label: 'Kwadrat - 4 miejsca',
+      label: 'Prostokąt - 4 miejsca',
       onClick: () => dispatch(addRectTable({ x: center.x, y: center.y, width: 118, height: 70 })),
     },
     {
       id: 'rect-46',
-      label: 'Kwadrat - 4-6 miejsc',
+      label: 'Prostokąt - 6 miejsc',
       onClick: () => dispatch(addRectTable({ x: center.x, y: center.y, width: 144, height: 82 })),
     },
   ];

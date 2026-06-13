@@ -36,9 +36,9 @@
   --color-danger-bg: var(--color-rose-50);
   --color-danger-border: var(--color-rose-300);
 
-  --color-status-available-stroke: var(--color-neutral-400);
-  --color-status-available-fill: var(--color-neutral-100);
-  --color-status-available-text: var(--color-neutral-500);
+  --color-status-available-stroke: var(--color-lime-500);
+  --color-status-available-fill: var(--color-lime-50);
+  --color-status-available-text: var(--color-lime-800);
 
   --color-status-reserved-stroke: var(--color-emerald-500);
   --color-status-reserved-fill: var(--color-emerald-50);

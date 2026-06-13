@@ -1,11 +1,12 @@
 import DateTimeSummaryBar from './DateTimeSummaryBar';
 
 import type { ReservationForm } from '../model/types';
-import type { FloorData, FloorElement } from '@/features/floorPlan/model/types';
+import type { FloorData, FloorElement, TableStatus } from '@/features/floorPlan/model/types';
 
 import FloorPlanCanvas from '@/features/floorPlan/ui/FloorPlanCanvas';
 import FloorPlanLegend from '@/features/floorPlan/ui/shared/FloorPlanLegend';
 import FloorSelector from '@/features/floorPlan/ui/shared/FloorSelector';
+import { getElementCapacityLabel } from '@/features/shared/helpers';
 
 export default function TablePickerStep({
   date,
@@ -13,6 +14,10 @@ export default function TablePickerStep({
   floors,
   activeFloorId,
   selectedElement,
+  tableAvailability,
+  tableStatuses,
+  tableAvailabilityLoading,
+  isSelectedTableAvailable,
   form,
   onChangeDateTime,
   onFloorChange,
@@ -25,6 +30,10 @@ export default function TablePickerStep({
   floors: Pick<FloorData, 'id' | 'name'>[];
   activeFloorId: string;
   selectedElement: FloorElement | null | undefined;
+  tableAvailability: Record<string, boolean>;
+  tableStatuses: Record<string, TableStatus>;
+  tableAvailabilityLoading: boolean;
+  isSelectedTableAvailable: boolean;
   form: ReservationForm;
   onChangeDateTime: () => void;
   onFloorChange: (id: string) => void;
@@ -34,6 +43,15 @@ export default function TablePickerStep({
 }) {
   const tableType = selectedElement?.type === 'roundTable' ? 'Okrągły' : 'Prostokątny';
   const activeFloorName = floors.find((f) => f.id === activeFloorId)?.name ?? activeFloorId;
+  const selectedTableAvailable =
+    selectedElement && tableAvailability[selectedElement.id] === true && !tableAvailabilityLoading;
+  const selectedTableOccupied =
+    selectedElement && tableAvailability[selectedElement.id] === false && !tableAvailabilityLoading;
+
+  const handleTableClick = (id: string) => {
+    if (tableAvailabilityLoading) return;
+    onTableClick(id);
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -42,7 +60,11 @@ export default function TablePickerStep({
       <div className="flex min-h-0 flex-1">
         {/* Canvas with absolute overlays */}
         <div className="relative min-h-0 min-w-0 flex-1">
-          <FloorPlanCanvas mode="view" onTableClick={onTableClick} />
+          <FloorPlanCanvas
+            mode="view"
+            tableStatuses={tableStatuses}
+            onTableClick={handleTableClick}
+          />
 
           {/* Top overlay: plan label + floor tabs */}
           <div className="pointer-events-none absolute left-0 right-0 top-0 flex items-start justify-between px-6 pt-5">
@@ -65,7 +87,9 @@ export default function TablePickerStep({
               <FloorPlanLegend variant="customer" />
             </div>
             <span className="rounded-sm bg-white/70 px-2 py-0.5 text-xs text-text-muted backdrop-blur-sm">
-              Naciśnij aby wybrać stolik
+              {tableAvailabilityLoading
+                ? 'Sprawdzanie dostępności stolików...'
+                : 'Naciśnij aby wybrać wolny stolik'}
             </span>
           </div>
         </div>
@@ -84,78 +108,99 @@ export default function TablePickerStep({
                     <div>
                       <p className="font-semibold text-text">{selectedElement.label}</p>
                       <p className="mt-0.5 text-xs text-text-muted">
-                        {tableType} · 4 miejsca · {activeFloorName}
+                        {tableType} · {getElementCapacityLabel(selectedElement)} · {activeFloorName}
                       </p>
                     </div>
-                    <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      wolny
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs font-medium ${
+                        selectedTableAvailable
+                          ? 'bg-(--color-status-reserved-fill) text-(--color-status-reserved-text)'
+                          : selectedTableOccupied
+                            ? 'bg-(--color-status-occupied-fill) text-(--color-status-occupied-text)'
+                            : 'bg-surface-subtle text-text-muted'
+                      }`}
+                    >
+                      {selectedTableAvailable
+                        ? 'wolny'
+                        : selectedTableOccupied
+                          ? 'zajęty'
+                          : 'sprawdzanie'}
                     </span>
                   </div>
                 </div>
-
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
-                  Szczegóły rezerwacji
-                </p>
               </div>
 
               {/* Scrollable form */}
-              <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-1 pb-6">
-                <div className="space-y-3">
-                  <div>
-                    <label className="mb-1 block text-xs text-text-muted">Imię i nazwisko</label>
-                    <input
-                      type="text"
-                      autoComplete="name"
-                      value={form.guestName}
-                      onChange={(e) => onFormChange({ guestName: e.target.value })}
-                      className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text outline-none focus:border-primary"
-                    />
+              {isSelectedTableAvailable && (
+                <>
+                  <div className="shrink-0 px-6 pt-4">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
+                      Szczegóły rezerwacji
+                    </p>
                   </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-text-muted">Numer telefonu</label>
-                    <input
-                      type="tel"
-                      autoComplete="tel"
-                      value={form.phone}
-                      onChange={(e) => onFormChange({ phone: e.target.value })}
-                      className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text outline-none focus:border-primary"
-                    />
+                  <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-1 pb-6">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="mb-1 block text-xs text-text-muted">
+                          Imię i nazwisko
+                        </label>
+                        <input
+                          type="text"
+                          autoComplete="name"
+                          value={form.guestName}
+                          onChange={(e) => onFormChange({ guestName: e.target.value })}
+                          className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-text-muted">Numer telefonu</label>
+                        <input
+                          type="tel"
+                          autoComplete="tel"
+                          value={form.phone}
+                          onChange={(e) => onFormChange({ phone: e.target.value })}
+                          className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-text-muted">Adres e-mail</label>
+                        <input
+                          type="email"
+                          autoComplete="email"
+                          value={form.email}
+                          onChange={(e) => onFormChange({ email: e.target.value })}
+                          className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-text-muted">
+                          Wymagania specjalne <span className="text-text-subtle">(opcjonalne)</span>
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={form.specialRequests}
+                          onChange={(e) => onFormChange({ specialRequests: e.target.value })}
+                          placeholder="np. alergie, stolik dla dziecka ..."
+                          className="w-full resize-none rounded-lg border border-border px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-text-muted">Adres e-mail</label>
-                    <input
-                      type="email"
-                      autoComplete="email"
-                      value={form.email}
-                      onChange={(e) => onFormChange({ email: e.target.value })}
-                      className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text outline-none focus:border-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-text-muted">
-                      Wymagania specjalne <span className="text-text-subtle">(opcjonalne)</span>
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={form.specialRequests}
-                      onChange={(e) => onFormChange({ specialRequests: e.target.value })}
-                      placeholder="np. alergie, stolik dla dziecka ..."
-                      className="w-full resize-none rounded-lg border border-border px-3 py-2 text-sm text-text outline-none focus:border-primary"
-                    />
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
 
               {/* Fixed footer button */}
-              <div className="shrink-0 px-6 py-4">
-                <button
-                  onClick={onConfirm}
-                  disabled={!form.guestName || !form.phone || !form.email}
-                  className="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Dalej
-                </button>
-              </div>
+              {isSelectedTableAvailable && (
+                <div className="shrink-0 px-6 py-4">
+                  <button
+                    onClick={onConfirm}
+                    disabled={!form.guestName || !form.phone || !form.email || !selectedElement}
+                    className="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Dalej
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center p-6">

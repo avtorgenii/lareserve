@@ -40,6 +40,14 @@ export const finishReservation = createAsyncThunk<string, string>(
   }
 );
 
+export const acceptReservation = createAsyncThunk<string, string>(
+  'reservations/accept',
+  async (reservationId) => {
+    await updateReservationStatus(Number(reservationId), 'ACCEPTED');
+    return reservationId;
+  }
+);
+
 const initialState: ReservationsState = {
   rawReservations: [],
   loadingState: 'idle',
@@ -87,6 +95,13 @@ const reservationsSlice = createSlice({
         if (r) r.status = 'FINISHED';
         const sr = state.rawSelectedTableReservations.find((r) => r.id === id);
         if (sr) sr.status = 'FINISHED';
+      })
+      .addCase(acceptReservation.fulfilled, (state, action) => {
+        const id = Number(action.payload);
+        const r = state.rawReservations.find((r) => r.id === id);
+        if (r) r.status = 'ACCEPTED';
+        const sr = state.rawSelectedTableReservations.find((r) => r.id === id);
+        if (sr) sr.status = 'ACCEPTED';
       });
   },
 });

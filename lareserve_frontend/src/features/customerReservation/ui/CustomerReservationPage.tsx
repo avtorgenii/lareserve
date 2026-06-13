@@ -1,14 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import ConfirmationStep from './ConfirmationStep';
 import DateTimePicker from './DateTimePicker';
 import StepIndicator from './StepIndicator';
 import TablePickerStep from './TablePickerStep';
-import { fetchAvailableDates, fetchAvailableTimes, submitReservation } from '../model/api';
+import {
+  fetchAvailableDates,
+  fetchAvailableTables,
+  fetchAvailableTimes,
+  submitReservation,
+} from '../model/api';
 
 import type { Step, ReservationForm } from '../model/types';
+import type { TableStatus } from '@/features/floorPlan/model/types';
 
 import { setActiveFloor } from '@/features/floorPlan/model/floorPlanSlice';
 import {
@@ -41,8 +47,10 @@ export default function CustomerReservationPage() {
   const [dates, setDates] = useState<string[]>([]);
   // Availability map from API: { "11:00": true, "12:00": false, ... }
   const [times, setTimes] = useState<Record<string, boolean>>({});
+  const [tableAvailability, setTableAvailability] = useState<Record<string, boolean>>({});
   const [datesLoading, setDatesLoading] = useState(false);
   const [timesLoading, setTimesLoading] = useState(false);
+  const [tablesLoading, setTablesLoading] = useState(false);
 
   // Selected ISO date ("YYYY-MM-DD") and time ("HH:MM")
   const [selectedDate, setSelectedDate] = useState('');
@@ -126,13 +134,64 @@ export default function CustomerReservationPage() {
     };
   }, [selectedDate]);
 
+  // Fetch available tables whenever selected date and time change.
+  useEffect(() => {
+    if (!selectedDate || !selectedTime) {
+      setTableAvailability({});
+      return;
+    }
+
+    let isActive = true;
+    setTablesLoading(true);
+
+    fetchAvailableTables(RESTAURANT_ID, selectedDate, selectedTime)
+      .then((fetchedAvailability) => {
+        if (!isActive) return;
+        setTableAvailability(fetchedAvailability);
+      })
+      .catch((err) => {
+        if (!isActive) return;
+        console.error('[Reservation] Failed to fetch table availability:', err);
+        setTableAvailability({});
+      })
+      .finally(() => {
+        if (isActive) {
+          setTablesLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [selectedDate, selectedTime]);
+
+  const tableStatuses = useMemo<Record<string, TableStatus>>(() => {
+    return Object.entries(tableAvailability).reduce<Record<string, TableStatus>>(
+      (acc, [tableId, available]) => {
+        acc[tableId] = available ? 'available' : 'occupied';
+        return acc;
+      },
+      {}
+    );
+  }, [tableAvailability]);
+
+  const isSelectedTableAvailable =
+    !!selectedElement && tableAvailability[selectedElement.id] === true && !tablesLoading;
+
   const handleFormChange = (patch: Partial<ReservationForm>) => {
     setForm((f) => ({ ...f, ...patch }));
   };
 
   const handleConfirmReservation = async () => {
-    if (!selectedElement) return;
-    const dateTime = `${selectedDate}T${selectedTime}:00Z`;
+    if (!selectedElement || tableAvailability[selectedElement.id] !== true) {
+      alert('Wybrany stolik jest już niedostępny. Wybierz inny stolik.');
+      setCurrentStep(2);
+      return;
+    }
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const [hours, minutes] = selectedTime.split(':').map(Number);
+    // Build local wall-clock datetime, then convert to UTC ISO for API transport.
+    const dateTime = new Date(year, month - 1, day, hours, minutes, 0).toISOString();
     try {
       await submitReservation(
         RESTAURANT_ID,
@@ -181,6 +240,10 @@ export default function CustomerReservationPage() {
           floors={floors}
           activeFloorId={activeFloorId}
           selectedElement={selectedElement}
+          tableAvailability={tableAvailability}
+          tableStatuses={tableStatuses}
+          tableAvailabilityLoading={tablesLoading}
+          isSelectedTableAvailable={isSelectedTableAvailable}
           form={form}
           onChangeDateTime={() => setCurrentStep(1)}
           onFloorChange={(id) => {
@@ -190,7 +253,13 @@ export default function CustomerReservationPage() {
           }}
           onTableClick={setSelectedElementId}
           onFormChange={handleFormChange}
-          onConfirm={() => setCurrentStep(3)}
+          onConfirm={() => {
+            if (!selectedElement || tableAvailability[selectedElement.id] !== true) {
+              alert('Wybrany stolik jest niedostępny. Wybierz inny stolik.');
+              return;
+            }
+            setCurrentStep(3);
+          }}
         />
       )}
 

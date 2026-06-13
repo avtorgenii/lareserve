@@ -15,6 +15,8 @@ const selectRawSelectedTableReservations = (state: RootState): BackendReservatio
 
 function mapRaw(r: BackendReservation, elements: FloorElement[]): Reservation {
   const el = elements.find((e) => e.id === r.table_id);
+  const status =
+    r.status === 'FINISHED' ? 'completed' : r.status === 'ACCEPTED' ? 'current' : 'upcoming';
   return {
     id: r.id.toString(),
     tableLabel: el?.label ?? `T-${r.table_id}`,
@@ -23,7 +25,7 @@ function mapRaw(r: BackendReservation, elements: FloorElement[]): Reservation {
     email: r.email || undefined,
     phone: r.phone || undefined,
     time: r.date.substring(11, 16),
-    status: r.status === 'FINISHED' ? 'completed' : 'upcoming',
+    status,
   };
 }
 
@@ -33,10 +35,18 @@ export const selectTableStatusesByLabel = createSelector(
   (rawReservations, elements) => {
     const result: Record<string, TableStatus> = {};
     for (const r of rawReservations) {
-      if (r.status === 'CONFIRMED') {
-        const el = elements.find((e) => e.id === r.table_id);
-        if (el) result[el.label] = 'reserved';
+      const el = elements.find((e) => e.id === r.table_id);
+      if (!el) continue;
+
+      if (r.status === 'ACCEPTED') {
+        result[el.label] = 'occupied';
+      } else if (r.status === 'CONFIRMED' && result[el.label] !== 'occupied') {
+        result[el.label] = 'reserved';
       }
+    }
+    for (const el of elements) {
+      if (result[el.label]) continue;
+      result[el.label] = 'available';
     }
     return result;
   }

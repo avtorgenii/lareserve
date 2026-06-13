@@ -74,6 +74,8 @@ class ReservationSerializer(serializers.ModelSerializer):
         table_id = data.get("table_id")
         reservation_date = data.get("date")
 
+        print(reservation_date)
+
         # 0. Check if date is in the past
         if reservation_date < timezone.now():
             raise serializers.ValidationError({"date": "Cannot book in the past."})

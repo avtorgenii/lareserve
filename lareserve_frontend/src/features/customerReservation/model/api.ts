@@ -43,6 +43,19 @@ function normalizeTimes(data: unknown): Record<string, boolean> {
   }, {});
 }
 
+function normalizeTables(data: unknown): Record<string, boolean> {
+  if (!isRecord(data)) return {};
+
+  const rawTables = isRecord(data.tables) ? data.tables : data;
+
+  return Object.entries(rawTables).reduce<Record<string, boolean>>((acc, [tableId, value]) => {
+    if (typeof value === 'boolean') {
+      acc[tableId] = value;
+    }
+    return acc;
+  }, {});
+}
+
 /** Returns ISO date strings for the next 14 bookable days (e.g. "2026-05-13"). */
 export async function fetchAvailableDates(restaurantId: number): Promise<string[]> {
   const response = await apiClient.get<unknown>(`/restaurants/${restaurantId}/available-dates/`);
@@ -62,6 +75,21 @@ export async function fetchAvailableTimes(
     params: { date },
   });
   return normalizeTimes(response.data);
+}
+
+/**
+ * Returns availability per table for a given date and time.
+ * Shape: { "table-id": true/false, ... }
+ */
+export async function fetchAvailableTables(
+  restaurantId: number,
+  date: string, // ISO date "YYYY-MM-DD"
+  time: string // Time slot "HH:MM"
+): Promise<Record<string, boolean>> {
+  const response = await apiClient.get<unknown>(`/restaurants/${restaurantId}/available-tables/`, {
+    params: { date, time },
+  });
+  return normalizeTables(response.data);
 }
 
 /**

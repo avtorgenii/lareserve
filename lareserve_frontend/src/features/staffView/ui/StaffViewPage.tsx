@@ -15,6 +15,7 @@ import FloorSelector from '@/features/floorPlan/ui/shared/FloorSelector';
 import {
   fetchTodaysReservations,
   fetchTableReservations,
+  acceptReservation,
   cancelReservation,
   finishReservation,
 } from '@/features/reservations/model/reservationsSlice';
@@ -27,6 +28,7 @@ import {
   selectSelectedTableReservations,
   selectSelectedTableLoadingState,
 } from '@/features/reservations/model/selectors';
+import { getElementCapacityLabel } from '@/features/shared/helpers';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
 const STATUS_LABELS = {
@@ -36,7 +38,7 @@ const STATUS_LABELS = {
 } as const;
 
 const STATUS_COLORS = {
-  available: { bg: 'bg-neutral-100', text: 'text-neutral-500', border: 'border-neutral-300' },
+  available: { bg: 'bg-lime-50', text: 'text-lime-800', border: 'border-lime-500' },
   reserved: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-300' },
   occupied: { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-300' },
 } as const;
@@ -83,12 +85,12 @@ export default function StaffViewPage() {
   const selectedTableStatus = selectedElement ? statusesByLabel[selectedElement.label] : undefined;
 
   const handleTableClick = (elementId: string) => {
-    if (selectedElementId === elementId) {
-      setSelectedElementId(null);
-    } else {
-      setSelectedElementId(elementId);
-      void dispatch(fetchTableReservations({ tableId: elementId, date: today }));
-    }
+    setSelectedElementId(elementId);
+    void dispatch(fetchTableReservations({ tableId: elementId, date: today }));
+  };
+
+  const handleEmptyClick = () => {
+    setSelectedElementId(null);
   };
 
   return (
@@ -119,10 +121,10 @@ export default function StaffViewPage() {
                     style={{
                       borderColor:
                         status === 'available'
-                          ? '#a3a3a3'
+                          ? 'var(--color-status-available-stroke)'
                           : status === 'reserved'
-                            ? '#10b981'
-                            : '#fb7185',
+                            ? 'var(--color-status-reserved-stroke)'
+                            : 'var(--color-status-occupied-stroke)',
                     }}
                   />
                   <span className="text-sm text-text">{STATUS_LABELS[status]}</span>
@@ -176,6 +178,7 @@ export default function StaffViewPage() {
             mode="view"
             tableStatuses={tableStatuses}
             onTableClick={handleTableClick}
+            onEmptyClick={handleEmptyClick}
           />
         </div>
 
@@ -217,7 +220,7 @@ export default function StaffViewPage() {
                   {STATUS_LABELS[selectedTableStatus]}
                 </span>
                 <span className="text-sm text-text-muted">
-                  {selectedElement.type === 'roundTable' ? '4 miejsca' : '4–6 miejsc'}
+                  {getElementCapacityLabel(selectedElement)}
                 </span>
               </div>
             )}
@@ -283,8 +286,16 @@ export default function StaffViewPage() {
                             {RESERVATION_STATUS_LABELS[reservation.status]}
                           </span>
                         </div>
-                        {reservation.status === 'upcoming' && (
+                        {reservation.status !== 'completed' && (
                           <div className="flex gap-2">
+                            {reservation.status === 'upcoming' && (
+                              <button
+                                onClick={() => void dispatch(acceptReservation(reservation.id))}
+                                className="flex-1 rounded border border-sky-300 bg-sky-50 px-2 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100"
+                              >
+                                Przyjmij
+                              </button>
+                            )}
                             <button
                               onClick={() => void dispatch(finishReservation(reservation.id))}
                               className="flex-1 rounded border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"

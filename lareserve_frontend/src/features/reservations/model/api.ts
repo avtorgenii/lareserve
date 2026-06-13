@@ -6,7 +6,7 @@ export type BackendReservation = {
   /** ISO datetime string, e.g. "2026-05-13T19:00:00Z" */
   date: string;
   table_id: string;
-  status: 'CONFIRMED' | 'CANCELLED' | 'FINISHED';
+  status: 'CONFIRMED' | 'CANCELLED' | 'ACCEPTED' | 'FINISHED';
   guest_name: string;
   email: string;
   phone: string;
@@ -46,7 +46,7 @@ export async function cancelReservation(pk: number): Promise<void> {
 /** Update a reservation's status. Requires authentication. */
 export async function updateReservationStatus(
   pk: number,
-  status: 'CONFIRMED' | 'FINISHED'
+  status: 'CONFIRMED' | 'ACCEPTED' | 'FINISHED'
 ): Promise<void> {
   await apiClient.put(`/reservations/${pk}/status/`, { status });
 }

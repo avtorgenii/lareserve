@@ -25,12 +25,14 @@ type FloorPlanCanvasProps = {
   mode?: CanvasMode;
   tableStatuses?: Record<string, TableStatus>;
   onTableClick?: (elementId: string) => void;
+  onEmptyClick?: () => void;
 };
 
 export default function FloorPlanCanvas({
   mode = 'edit',
   tableStatuses,
   onTableClick,
+  onEmptyClick,
 }: FloorPlanCanvasProps) {
   const dispatch = useAppDispatch();
   const elements = useAppSelector(selectFloorPlanElements);
@@ -84,6 +86,7 @@ export default function FloorPlanCanvas({
   const handleStagePointerDown = (event: KonvaEventObject<MouseEvent | TouchEvent>) => {
     if (event.target !== event.target.getStage()) return;
     dispatch(clearSelection());
+    onEmptyClick?.();
     const pos = getPointerPos(event);
     if (!pos) return;
     panStartPos.current = { pointerX: pos.x, pointerY: pos.y };

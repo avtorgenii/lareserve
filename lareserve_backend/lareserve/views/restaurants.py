@@ -232,7 +232,8 @@ def restaurant_available_tables(request, pk):
         floors = layout.get("floors", {})
         results = {
             elem.get("id"): False
-            for elem in floors.values()
+            for floor_elements in floors.values()
+            for elem in floor_elements
             if "table" in elem.get("type", "").lower()
         }
         return Response({"tables": results})
@@ -241,7 +242,8 @@ def restaurant_available_tables(request, pk):
     floors = layout.get("floors", {})
     table_ids = [
         elem.get("id")
-        for elem in floors.values()
+        for floor_elements in floors.values()
+        for elem in floor_elements
         if "table" in elem.get("type", "").lower()
     ]
 
@@ -264,7 +266,24 @@ def restaurant_available_tables(request, pk):
         .distinct()
     )
 
-    results = {tid: (tid not in reserved_table_ids) for tid in table_ids}
+    occupied_table_ids = (
+        Reservation.objects.filter(
+            restaurant=restaurant,
+            table_id__in=table_ids,
+            status=Reservation.Status.ACCEPTED,
+            date__range=(
+                target_datetime - buffer + timedelta(seconds=1),
+                target_datetime + buffer - timedelta(seconds=1),
+            ),
+        )
+        .values_list("table_id", flat=True)
+        .distinct()
+    )
+
+    results = {
+        tid: (tid not in reserved_table_ids and tid not in occupied_table_ids)
+        for tid in table_ids
+    }
     return Response({"tables": results})
 
 
@@ -352,6 +371,6 @@ def restaurant_available_times(request, pk):
 
         results[time_str] = conflicts_count < len(
             table_ids
-        ) and slot_time >= timezone.localtime() + timedelta(hours=1)
+        ) and slot_time >= timezone.localtime() + timedelta(minutes=29, seconds=59)
 
     return Response(results)
