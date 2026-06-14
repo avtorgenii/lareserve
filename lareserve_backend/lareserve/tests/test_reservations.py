@@ -21,20 +21,24 @@ class ReservationTests(APITestCase):
         self.table_id_2 = "a1b2c3d4-0002-0002-0002-000000000002"
         self.layout = {
             "floors": {
-                "1": {
-                    "id": self.table_id_1,
-                    "type": "table",
-                    "x": 0,
-                    "y": 0,
-                    "label": "Table 1",
-                },
-                "2": {
-                    "id": self.table_id_2,
-                    "type": "table",
-                    "x": 10,
-                    "y": 10,
-                    "label": "Table 2",
-                },
+                "1": [
+                    {
+                        "id": self.table_id_1,
+                        "type": "table",
+                        "x": 0,
+                        "y": 0,
+                        "label": "Table 1",
+                    }
+                ],
+                "2": [
+                    {
+                        "id": self.table_id_2,
+                        "type": "table",
+                        "x": 10,
+                        "y": 10,
+                        "label": "Table 2",
+                    }
+                ],
             }
         }
         self.restaurant = Restaurant.objects.create(

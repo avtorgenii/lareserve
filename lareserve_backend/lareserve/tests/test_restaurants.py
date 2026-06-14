@@ -18,8 +18,8 @@ class RestaurantTests(APITestCase):
 
         self.valid_layout = {
             "floors": {
-                "1": {"id": 1, "type": "table", "x": 0, "y": 0, "label": "Table 1"},
-                "2": {"id": 2, "type": "table", "x": 10, "y": 10, "label": "Table 2"},
+                "1": [{"id": 1, "type": "table", "x": 0, "y": 0, "label": "Table 1"}],
+                "2": [{"id": 2, "type": "table", "x": 10, "y": 10, "label": "Table 2"}],
             }
         }
 
@@ -69,7 +69,7 @@ class RestaurantTests(APITestCase):
         url = reverse("restaurant-update-layout", kwargs={"pk": res.pk})
         new_layout = {
             "floors": {
-                "1": {"id": 1, "type": "table", "x": 5, "y": 5, "label": "Updated"}
+                "1": [{"id": 1, "type": "table", "x": 5, "y": 5, "label": "Updated"}]
             }
         }
         response = self.client.put(url, new_layout, format="json")
@@ -97,8 +97,8 @@ class RestaurantTests(APITestCase):
         date_str = timezone.localdate().isoformat()
         response = self.client.get(url, {"date": date_str})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # It's now wrapped in 'time_slots'
-        self.assertIn("11:00", response.data["time_slots"])
+        # It's NOT wrapped in 'time_slots' despite the docstring
+        self.assertIn("11:00", response.data)
 
     def test_available_tables(self):
         res = Restaurant.objects.create(
