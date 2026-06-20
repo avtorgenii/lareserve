@@ -13,7 +13,9 @@ Zaczynając od `root` sklonowanego repozytorium:
 cd ./lareserve_backend
 ```
 
-Należy stworzyć plik `.env` wypełniony danymi:
+Wymagane jest pobranie odpowiednich modułów Python z pomocą `uv sync` lub modułu `venv`. Wszystkie potrzebne moduły znajdują się w pliku `requirements.txt`.
+
+Następnie należy stworzyć plik `.env` wypełniony danymi:
 ```
 SECRET_KEY=<>
 DEBUG=true
